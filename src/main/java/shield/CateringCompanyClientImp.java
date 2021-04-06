@@ -5,17 +5,22 @@
 package shield;
 
 public class CateringCompanyClientImp implements CateringCompanyClient {
-  public CateringCompanyClientImp(String endpoint) {
-  }
+  private String endpoint;
+  private String name;
+  private String postCode;
+
+  public CateringCompanyClientImp(String endpoint) { this.endpoint = endpoint; }
 
   @Override
   public boolean registerCateringCompany(String name, String postCode) {
+
     return false;
   }
 
   @Override
   public boolean updateOrderStatus(int orderNumber, String status) {
     return false;
+
   }
 
   @Override
