@@ -42,7 +42,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     } catch (Exception e) {
       e.printStackTrace();
     }
-  
+    
     return false;
   }
 
@@ -70,6 +70,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     }
     
     return false;
+
   }
 
   @Override
