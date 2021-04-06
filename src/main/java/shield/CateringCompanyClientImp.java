@@ -23,7 +23,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     if (name == null || postCode == null) return false;
     
     // check the format of postCode
-    boolean isMatch = postCode.matches("^EH[0-9]{1,2}_[A-Z]{1,2}[0-9]");
+    boolean isMatch = postCode.matches("EH[1-17]_[1-9][A-Z][A-Z]");
     if (!isMatch) return false;
     
     String request = "/registerCateringCompany?business name="+name+"&postcode="+postCode;
