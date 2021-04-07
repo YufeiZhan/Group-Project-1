@@ -101,7 +101,7 @@ public class CateringCompanyClientImpTest {
     postCode = "EHA 7AY"; // incorrect char after "EH"
     assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode: [1-17] after 'EH'");
   
-    postCode = "EH23 7AY"; // incorrect num after "EH"
+    postCode = "EH18 7AY"; // incorrect num after "EH"
     assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode: [1-17] after 'EH'");
   
     postCode = "EH177AY"; // incorrect postcode without space
@@ -118,6 +118,37 @@ public class CateringCompanyClientImpTest {
   
     postCode = "EH17 5A2"; // incorrect postcode ending with num
     assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode ending with upper-cased chars");
+  }
+  
+  
+  @Test
+  @DisplayName("Testing valid marginal postcode input for catering company registration")
+  public void testValidPostCodeCateringCompanyNewRegistration() {
+    String name = generateValidRandomName();
+    
+    String postCode = "EH1 5GG";
+    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+    
+    postCode = "EH17 5GG";
+    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+  
+    postCode = "EH15 1GG";
+    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+  
+    postCode = "EH15 9GG";
+    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+  
+    postCode = "EH15 5AG";
+    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+  
+    postCode = "EH15 5AA";
+    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+  
+    postCode = "EH15 5ZG";
+    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+  
+    postCode = "EH15 5ZZ";
+    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
   }
   
   @Test
