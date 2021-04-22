@@ -12,18 +12,30 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
   private String name;
   private String postCode;
   
-  public CateringCompanyClientImp(String ep, String n, String pc) {
-    endpoint = ep;
-    name = n;
-    postCode = pc;
+  public CateringCompanyClientImp(String endpoint) {
+    // if name and postCode are null, then it hasn't been registered
+    this.endpoint = endpoint;
+    name = null;
+    postCode = null;
+    
   }
 
   @Override
   public boolean registerCateringCompany(String name, String postCode) {
+    assert name != null;
+    assert postCode != null;
     if (name == null || postCode == null) return false;
+    // when registering, set name and postCode (need postpone, only if success)
+    this.name = name;
+    this.postCode = postCode;
+    
+    // current version: new id to be fixed
+    // server would return "id to be specified" --> name or postcode invalid
+    // when registering twice, even if the parameters are invalid, should return true
+    // move null checking inside try to enumerate all cases after get response
     
     // check the format of postCode
-    boolean isMatch = postCode.matches("EH[1-17]_[1-9][A-Z][A-Z]");
+    boolean isMatch = postCode.matches("EH([1-9]|(1[0-7]))_[1-9][A-Z][A-Z]");
     if (!isMatch) return false;
     
     String request = "/registerCateringCompany?business name="+name+"&postcode="+postCode;
@@ -39,11 +51,11 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
       if (response == EXIST || response == SUCCESS){
         return true;
       }
+      return false;
     } catch (Exception e) {
       e.printStackTrace();
+      return false;
     }
-    
-    return false;
   }
 
   
