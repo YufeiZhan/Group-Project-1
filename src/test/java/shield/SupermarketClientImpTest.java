@@ -72,8 +72,6 @@ public class SupermarketClientImpTest {
     String userRegisterRequest = "/registerShieldingIndividual?CHI="+ placedCHI;
     String recordOrderRequest = "/recordSupermarketOrder?individual_id="+ placedCHI +"&order_number="+ placedOrderNum +"&supermarket_business_name="+placedSupermarketName+"&supermarket_postcode="+placedSupermarketPostcode;
     
-    //Client to test order status
-//    statusClient = new SupermarketClientImp(clientProps.getProperty("endpoint"));
     
     try {
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + registerRequest);
@@ -88,6 +86,7 @@ public class SupermarketClientImpTest {
   }
   
   @Test
+//  @DisplayName()
   public void testConstructorInitialization() {
     assertFalse(nonRegisteredClient.isRegistered(), "Supermarket shouldn't be registered before registration");
     assertNull(nonRegisteredClient.getName(),"Supermarket shouldn't have a name before registration");
@@ -161,7 +160,7 @@ public class SupermarketClientImpTest {
   
   
   
-    // ----- Testing Helper Method -----
+    // --------------------------------------- Testing Helper Method ---------------------------------------
   
   private String generateValidSupermarketName(){
     Random rand = new Random();

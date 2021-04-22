@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Properties;
 import java.time.LocalDateTime;
@@ -23,167 +24,145 @@ import java.util.Random;
 
 public class CateringCompanyClientImpTest {
   private final static String clientPropsFilename = "client.cfg";
-  
-  private Properties clientProps;
-  private CateringCompanyClient validClient;
-  private CateringCompanyClient invalidClient;
-  
 
-  
+  private Properties clientProps;
+  private CateringCompanyClientImp newClient;
+  private CateringCompanyClientImp registeredClient;
+  private String registeredName;
+  private String registeredPostCode;
+  private CateringCompanyClientImp orderedClient;
+
+
+
   private Properties loadProperties(String propsFilename) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
     Properties props = new Properties();
-    
+
     try {
       InputStream propsStream = loader.getResourceAsStream(propsFilename);
       props.load(propsStream);
     } catch (Exception e) {
       e.printStackTrace();
     }
-    
+
     return props;
-    
+
   }
-  
+
   @BeforeEach
   public void setup() {
     clientProps = loadProperties(clientPropsFilename);
-    validClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
-    invalidClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
-  }
-  
-  // ----- Registration Testing -----
-  @Test
-  @DisplayName("Testing valid input for new catering company registration")
-  public void testValidCateringCompanyNewRegistration() {
-    String name = generateValidRandomName();
-    String postCode = generateValidRandomPostCode();
+    newClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
     
-    // +++ Internal server error: change the first assertion once server fixed
-    assertTrue(validClient.registerCateringCompany(name, postCode));
-    assertTrue(validClient.isRegistered());
-    assertEquals(validClient.getName(), name);
-    assertEquals(validClient.getPostCode(), postCode);
+    registeredClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
+    registeredName = "tempCateringCompany";
+    registeredPostCode = "EH17_9ZZ";
+    String registrationRequest = "/registerCateringCompany?business_name="+registeredName+"&postcode="+registeredPostCode;
+    
+//    orderedClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
+//    String orderedName = "tempCateringCompany2";
+//    String orderedPostCode = "EH1_1AA";
+//    String registrationRequest2 = "/registerCateringCompany?business_name="+orderedName+"&postcode="+orderedPostCode;
+//    String orderRequest = 'updateOrderStatus?order_id=42&newStatus=packed'
+    
+  
+    try {
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + registrationRequest);
+      registeredClient.setCateringCompany(registeredName,registeredPostCode);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
-  
-  @Test
-  @DisplayName("Testing null name field for catering company registration")
-  public void testNullNameCateringCompanyNewRegistration() {
-    String postCode = generateValidRandomPostCode();
-  
-    assertFalse(invalidClient.registerCateringCompany(null,postCode),
-            "Catering Company shouldn't been registered with name field being null");
 
-  }
-  
+  // ---------------------------------------- Registration Testing ----------------------------------------
   @Test
-  @DisplayName("Testing null postcode field for catering company registration")
-  public void testNullPostCodeCateringCompanyNewRegistration() {
-    String name = generateValidRandomName();;
-    
-    assertFalse(validClient.registerCateringCompany(name,null),
-            "Catering Company shouldn't been registered with postcode field being null");
-  }
-  
-  @Test
-  @DisplayName("Testing invalid postcode input for catering company registration")
-  public void testInvalidPostCodeCateringCompanyNewRegistration() {
+  @DisplayName("Testing input for new catering company registration")
+  public void testCateringCompanyNewRegistration() {
     String name = generateValidRandomName();
-    String postCode = "EB16 7AY"; // incorrect "EB" starting
-    assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode should start with 'EH'");
-  
-    postCode = "eh1 7AY"; // incorrect lower-cased "EH"
-    assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode only upper-cased");
-  
-    postCode = "EH0 7AY"; // incorrect num after "EH"
-    assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode: [1-17] after 'EH'");
+
+//    //testing invalid parameters
+//    assertFalse(newClient.registerCateringCompany(null,postCode),
+//            "Catering Company shouldn't been registered with name field being null");
+//    assertFalse(newClient.registerCateringCompany(name,null),
+//            "Catering Company shouldn't been registered with name field being null");
+    assertFalse(newClient.isRegistered());
     
-    postCode = "EHA 7AY"; // incorrect char after "EH"
-    assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode: [1-17] after 'EH'");
-  
-    postCode = "EH18 7AY"; // incorrect num after "EH"
-    assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode: [1-17] after 'EH'");
-  
-    postCode = "EH177AY"; // incorrect postcode without space
-    assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode: a space required in postcode");
-  
-    postCode = "EH17 0AY"; // incorrect num after space
-    assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode: [1-9] after space");
-  
-    postCode = "EH17 5Ay"; // incorrect num after space
-    assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode only upper-cased");
-  
-    postCode = "EH17 5aY"; // incorrect lowercase postcode
-    assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode only upper-cased");
-  
-    postCode = "EH17 5A2"; // incorrect postcode ending with num
-    assertFalse(invalidClient.registerCateringCompany(name,postCode),"Postcode ending with upper-cased chars");
+    //testing invalid postcode
+    String postCode = "EB16_7AY"; // incorrect "EB" starting
+    assertFalse(newClient.registerCateringCompany(name,postCode),"Postcode should start with 'EH'");
+    postCode = "eh1_7AY"; // incorrect lower-cased "EH"
+    assertFalse(newClient.registerCateringCompany(name,postCode),"Postcode only upper-cased");
+    postCode = "EH0_7AY"; // incorrect num after "EH"
+    assertFalse(newClient.registerCateringCompany(name,postCode),"Postcode: [1-17] after 'EH'");
+    postCode = "EHA_7AY"; // incorrect char after "EH"
+    assertFalse(newClient.registerCateringCompany(name,postCode),"Postcode: [1-17] after 'EH'");
+    postCode = "EH18_7AY"; // incorrect num after "EH"
+    assertFalse(newClient.registerCateringCompany(name,postCode),"Postcode: [1-17] after 'EH'");
+    postCode = "EH177AY"; // incorrect postcode without underline
+    assertFalse(newClient.registerCateringCompany(name,postCode),"Postcode: a space required in postcode");
+    postCode = "EH17_0AY"; // incorrect num after space
+    assertFalse(newClient.registerCateringCompany(name,postCode),"Postcode: [1-9] after space");
+    postCode = "EH17_5Ay"; // incorrect num after space
+    assertFalse(newClient.registerCateringCompany(name,postCode),"Postcode only upper-cased");
+    postCode = "EH17_5aY"; // incorrect lowercase postcode
+    assertFalse(newClient.registerCateringCompany(name,postCode),"Postcode only upper-cased");
+    postCode = "EH17_5A2"; // incorrect postcode ending with num
+    assertFalse(newClient.registerCateringCompany(name,postCode),"Postcode ending with upper-cased chars");
+    
+    assertTrue(registeredClient.registerCateringCompany(registeredName,registeredPostCode),
+            "Catering Company should have already been registered and return true");
+    assertTrue(registeredClient.isRegistered());
+    assertEquals(registeredClient.getName(), registeredName);
+    assertEquals(registeredClient.getPostCode(), registeredPostCode);
   }
   
   
-  @Test
-  @DisplayName("Testing valid marginal postcode input for catering company registration")
-  public void testValidPostCodeCateringCompanyNewRegistration() {
-    String name = generateValidRandomName();
-    
-    String postCode = "EH1 5GG";
-    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-    
-    postCode = "EH17 5GG";
-    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+//  @Test
+//  @DisplayName("Testing valid marginal postcode input for catering company registration")
+//  public void testValidPostCodeCateringCompanyNewRegistration() {
+//    String name = generateValidRandomName();
+//
+//    String postCode = "EH1_5GG";
+//    assertTrue(newClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+//    postCode = "EH17_5GG";
+//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+//    postCode = "EH15_1GG";
+//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+//    postCode = "EH15_9GG";
+//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+//    postCode = "EH15_5AG";
+//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+//    postCode = "EH15_5AA";
+//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+//    postCode = "EH15_5ZG";
+//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+//    postCode = "EH15_5ZZ";
+//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
+//  }
   
-    postCode = "EH15 1GG";
-    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-  
-    postCode = "EH15 9GG";
-    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-  
-    postCode = "EH15 5AG";
-    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-  
-    postCode = "EH15 5AA";
-    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-  
-    postCode = "EH15 5ZG";
-    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-  
-    postCode = "EH15 5ZZ";
-    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-  }
-  
-  @Test
-  @DisplayName("Testing repeated registration for old catering company")
-  public void testRepeatedCateringCompanyRegistration() {
-    String validClientName = validClient.getName();
-    String validClientCode = validClient.getPostCode();
-  
-    assertTrue(validClient.isRegistered());
-    assertTrue(validClient.registerCateringCompany(validClientName,validClientCode),
-            "Catering Company should have already been registered");
-  }
-  
-  // ----- Order Updates Testing -----
-  
-  
-  // ----- Testing Helper Method -----
+
+  // ----------------------------------- Order Updates Testing -----------------------------------
+
+
+  // ----------------------------------- Testing Helper Method -----------------------------------
   private String generateValidRandomName(){
     Random rand = new Random();
-    return String.valueOf(rand.nextInt(10000));
+    return ("testCateringCompany"+rand.nextInt(10000));
   }
-  
+
   private String generateValidRandomPostCode(){
     int uppercaseBase = (int) 'A'; // index for uppercase A
     Random rand = new Random();
     int firstRandomNum = rand.nextInt(26);
     int secondRandomNum = rand.nextInt(26);
-    
+
     char firstChar = (char) (uppercaseBase + firstRandomNum);
     char secondChar = (char) (uppercaseBase + secondRandomNum);
-    
-    String postCode = "EH" + String.valueOf(rand.nextInt(17) + 1) + ' ' +
+
+    String postCode = "EH" + String.valueOf(rand.nextInt(17) + 1) + '_' +
             String.valueOf(rand.nextInt(9) + 1) + firstChar + secondChar;
-            
+
     return postCode;
   }
-  
+
 }
