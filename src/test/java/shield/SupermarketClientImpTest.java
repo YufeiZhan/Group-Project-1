@@ -108,7 +108,8 @@ public class SupermarketClientImpTest {
 
     //Test already registered
     assertTrue(nonRegisteredClient.registerSupermarket(newName,newPostCode),"Supermarket should be already registered and return true");
-    assertTrue(registeredClient.registerSupermarket(registeredClient.getName(), registeredClient.getPostCode()),
+    //TODO: change this function
+    assertTrue(registeredClient.registerSupermarket(registeredCHI, registeredClient.getPostCode()),
             "supermarket should be already registered and return true.");
     
     //++Test invalid input

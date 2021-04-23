@@ -27,11 +27,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   //private List<MessagingFoodBox> defaultBoxes;
   
   private class ShieldingIndividual {
-    String CHI;
-    String postCode;
-    String name;
-    String surname;
-    String phoneNumber;
+    String CHI = null;
+    String postCode = null;
+    String name = null;
+    String surname = null;
+    String phoneNumber = null;
     boolean registered = false;
   }
   
@@ -52,22 +52,23 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   // internal field only used for transmission purposes
   final class MessagingFoodBox {
     // a field marked as transient is skipped in marshalling/unmarshalling
-    List<Content> contents;
+    List<Content> contents = null;
     //transient
-    String delivered_by;
-    String diet;
-    int id;
-    String name;
+    String delivered_by = null;
+    String diet = null;
+    int id = -1;
+    String name = null;
   }
  
   final class Content {
-    int id;
-    String name;
-    int quantity;
+    int id = -1;
+    String name = null;
+    int quantity = -1;
   }
   
   public ShieldingIndividualClientImp(String endpoint) {
     this.endpoint = endpoint;
+    this.shieldingIndividual = new ShieldingIndividual();
   }
 
   @Override
@@ -79,6 +80,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (CHI.length() != 10) return false;
     // format
     if (!CHI.matches("[0-9]{10}")) return false;
+//    System.out.println("1");
     
     int dd = Integer.parseInt(CHI.substring(0,2));
     int mm = Integer.parseInt(CHI.substring(2,4));
@@ -90,6 +92,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       dateIsValid = false;
     }
     if (!dateIsValid) return false;
+//    System.out.println("2");
     
     // construct the endpoint request
     String request = "/registerShieldingIndividual?CHI=" + CHI;
@@ -109,7 +112,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       responseDetail = new Gson().fromJson(response, listType);
       
       // set individual
-      shieldingIndividual = new ShieldingIndividual();
       String pc = responseDetail.get(0);
       shieldingIndividual.postCode = pc.replace(' ', '_');
       shieldingIndividual.name = responseDetail.get(1);
@@ -129,13 +131,18 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       
     } catch (Exception e) {
       e.printStackTrace();
+//      System.out.println("3");
       return false;
     }
+    
     
   }
 
   @Override
   public Collection<String> showFoodBoxes(String dietaryPreference) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return null;
+    
     // check validation of inputs
     if (dietaryPreference == null) return null;
   
@@ -247,6 +254,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public boolean editOrder(int orderNumber) {
+    
     // precondition: isRegistered()
     if (!isRegistered()) return false;
     // precondition: orderNumber exist
@@ -381,6 +389,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   // **UPDATE**
   @Override
   public Collection<String> getCateringCompanies() {
+    // check individual's validity to use methods
+    if (!isRegistered()) return null;
+    
     String request = "/getCaterers";
   
     // setup the response recepient
@@ -399,15 +410,15 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       assert responseDetail != null: "No Registered Catering Companies";
       // The first element is always "", because first line of txt file is always blank
       //TODO: may ignore this empty string for submission (check Piazza 801 again)
-      List<String> pureDetail = responseDetail.subList(1,responseDetail.size());
-      assert pureDetail != null;
+//      List<String> pureDetail = responseDetail.subList(1,responseDetail.size());
+//      assert pureDetail != null;
       /*
       for (String r: pureDetail) {
         System.out.println(r);
       }
       System.out.println(pureDetail.size());
       */
-      return pureDetail;
+      return responseDetail;
     
     } catch (Exception e) {
       e.printStackTrace();
@@ -419,6 +430,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   // **UPDATE**
   @Override
   public float getDistance(String postCode1, String postCode2) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return -1;
+    
     // check validation of inputs
     assert postCode1 != null;
     assert postCode2 != null;
@@ -453,6 +467,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public int getFoodBoxNumber() { // set all default boxes for user
+    // check individual's validity to use methods
+    if (!isRegistered()) return -1;
+    
     // construct the endpoint request
     String request = "/showFoodBox?";
   
@@ -480,6 +497,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public String getDietaryPreferenceForFoodBox(int foodBoxId) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return null;
+    
     //check validation of foodBoxId
     int range = getFoodBoxNumber();
     if (foodBoxId <= 0 || foodBoxId > range) return null;
@@ -528,6 +548,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public int getItemsNumberForFoodBox(int foodBoxId) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return -1;
+    
     //check validation of foodBoxId
     int range = getFoodBoxNumber();
     if (foodBoxId <= 0 || foodBoxId > range) return -1;
@@ -577,6 +600,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public Collection<Integer> getItemIdsForFoodBox(int foodboxId) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return null;
+    
     //check validation of foodBoxId
     int range = getFoodBoxNumber();
     if (foodboxId <= 0 || foodboxId > range) return null;
@@ -643,6 +669,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public String getItemNameForFoodBox(int itemId, int foodBoxId) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return null;
+    
     //check validation of foodBoxId
     int range = getFoodBoxNumber();
     if (foodBoxId <= 0 || foodBoxId > range) return null;
@@ -705,6 +734,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public int getItemQuantityForFoodBox(int itemId, int foodBoxId) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return -1;
+    
     //check validation of foodBoxId
     int range = getFoodBoxNumber();
     if (foodBoxId <= 0 || foodBoxId > range) return -1;
@@ -768,6 +800,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public boolean pickFoodBox(int foodBoxId) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return false;
+    
     //check validation of foodBoxId
     int range = getFoodBoxNumber();
     if (foodBoxId <= 0 || foodBoxId > range) {
@@ -830,6 +865,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public boolean changeItemQuantityForPickedFoodBox(int itemId, int quantity) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return false;
+    
     // check validation of inputs
     if (marked == null) return false;
     
@@ -852,6 +890,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public Collection<Integer> getOrderNumbers() {
+    // check individual's validity to use methods
+    if (!isRegistered()) return null;
+    
     if (boxOrders == null) return null;
     
     Collection<Integer> ids = new ArrayList<Integer>();
@@ -863,6 +904,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public String getStatusForOrder(int orderNumber) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return null;
+    
     //check validation of inputs
     if (boxOrders == null) return null;
     
@@ -882,6 +926,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public Collection<Integer> getItemIdsForOrder(int orderNumber) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return null;
+    
     //check validation of inputs
     if (boxOrders == null) return null;
     
@@ -903,6 +950,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public String getItemNameForOrder(int itemId, int orderNumber) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return null;
+    
     //check validation of inputs
     if (boxOrders == null) return null;
   
@@ -922,6 +972,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public int getItemQuantityForOrder(int itemId, int orderNumber) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return -1;
+    
     //check validation of inputs
     if (boxOrders == null) return -1;
   
@@ -941,6 +994,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public boolean setItemQuantityForOrder(int itemId, int orderNumber, int quantity) { // currently work for all order
+    // check individual's validity to use methods
+    if (!isRegistered()) return false;
+    
     //check validation of inputs
     if (boxOrders == null) return false; //what if used in place order
                                          // and the order is the first order ever that this individual have placed.
@@ -970,17 +1026,21 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   // **UPDATE**
   @Override
   public String getClosestCateringCompany() {
+    // check individual's validity to use methods
+    if (!isRegistered()) return null;
+    
     Collection<String> companies = getCateringCompanies();
     assert companies != null:"Fail to Get Catering Companies";
     List<String> caters = new ArrayList<String>(companies);
     if (caters.size() < 1) return null;
   
+    //get the distance of the first cater as baseline
     List<String> info = Arrays.asList(caters.get(0).split(","));
     String pc = info.get(2);
     float d = getDistance(shieldingIndividual.postCode,pc);
     //System.out.println(d);
     
-    for (String c: caters.subList(1,caters.size())) { //TODO: may ignore this first empty string
+    for (String c: caters.subList(1,caters.size())) { //search from the second cater in the list
       List<String> moreInfo = Arrays.asList(c.split(","));
       String morePC = moreInfo.get(2);
       float dis = getDistance(shieldingIndividual.postCode, morePC);
@@ -1001,7 +1061,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    
   }
   
-  //-------------------------getter/setter for testing--------------------------
+  //------------------------- getter/setter for testing--------------------------
   public MessagingFoodBox getMarked() {return this.marked;}
   public Collection<Order> getBoxOrders() {return this.boxOrders;}
   public ShieldingIndividual getShieldingIndividual() {return this.shieldingIndividual;}
@@ -1013,5 +1073,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public Order getLatest() {return this.latest;}
   public void setLatest(Order o) {
     this.latest = o;
+  }
+  
+  public void setShieldingIndividual(String CHI){
+    shieldingIndividual.CHI = CHI;
+    shieldingIndividual.registered = true;
+    marked = new MessagingFoodBox();
   }
 }

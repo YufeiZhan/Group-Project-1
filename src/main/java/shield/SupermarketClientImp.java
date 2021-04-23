@@ -40,6 +40,8 @@ public class SupermarketClientImp implements SupermarketClient {
 
   @Override
   public boolean registerSupermarket(String name, String postCode) {
+    //check validity of inputs
+    if (name == null || postCode == null || isValidPostCode(postCode)) return false;
     
     if(supermarket.isRegistered == true) return true;
     
@@ -67,6 +69,10 @@ public class SupermarketClientImp implements SupermarketClient {
   // **UPDATE2** ADDED METHOD
   @Override
   public boolean recordSupermarketOrder(String CHI, int orderNumber) {
+    
+    //check validity of inputs
+    if (CHI == null) return false;
+    
     String request = "/recordSupermarketOrder?individual_id="+CHI+"&order_number="+orderNumber+"&supermarket_business_name="+supermarket.name+"&supermarket_postcode="+supermarket.postCode;
     boolean result = false;
     
@@ -89,6 +95,9 @@ public class SupermarketClientImp implements SupermarketClient {
   // **UPDATE**
   @Override
   public boolean updateOrderStatus(int orderNumber, String status) {
+    //check validity of inputs
+    if (status == null) return false;
+    
     String request = "/updateSupermarketOrderStatus?order_id="+orderNumber+"&newStatus="+status;
     boolean result = false;
   
@@ -148,6 +157,9 @@ public class SupermarketClientImp implements SupermarketClient {
   }
   
   public boolean setOrder(String CHI, int orderNum){
+    
+    assert CHI != null;
+    
     if (orderExist(orderNum)){
       return false;
     } else{
@@ -169,6 +181,9 @@ public class SupermarketClientImp implements SupermarketClient {
   }
   
   private boolean updateObjectStatus(SupermarketOrder order, String status){
+    assert order != null;
+    assert status != null;
+    
     int currentStatus = getOrderStatus(order.orderNum);
     int newStatus = 0;
     switch (status){
@@ -191,6 +206,11 @@ public class SupermarketClientImp implements SupermarketClient {
     } else{
       return false;
     }
+  }
+  
+  private boolean isValidPostCode(String postcode){
+    assert postcode != null;
+    return postcode.matches("EH([1-9]|(1[0-7]))_[1-9][A-Z][A-Z]");
   }
   
 }
