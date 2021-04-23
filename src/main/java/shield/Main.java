@@ -23,7 +23,7 @@ public class Main {
     //所以isregisered 却没有办法通过server reset user的info
     
     ShieldingIndividualClientImp test = new ShieldingIndividualClientImp("http://0.0.0.0:5000/");
-    test.registerShieldingIndividual("1212120159");
+    test.registerShieldingIndividual("1212120160");
     assert test.isRegistered();
     
     /*
@@ -173,6 +173,23 @@ public class Main {
     assert place2 == false;
     
     //--------------------Orders related need to set order list-----------------------
+    ShieldingIndividualClientImp.Order orderPlaced = test.getLatest();
+    int orderId = orderPlaced.orderId;
+    Collection<Integer> orderIds = test.getOrderNumbers();
+    assert orderIds.contains(orderId);
+    //--------------------getStatusForOrder()-----------------------
+    System.out.println("order status: " +  test.getStatusForOrder(orderId));
+    //--------------------getItemIdsForOrder()-----------------------
+    Collection<Integer> ids = test.getItemIdsForOrder(orderId);
+    for (Integer i:ids) {
+      System.out.println("order item id: "+i);
+      System.out.println("order item name: "+test.getItemNameForOrder(i,orderId));
+      System.out.println("order item quantity: " + test.getItemQuantityForOrder(i,orderId));
+    }
+    //--------------------getStatusForOrder()-----------------------
+    
+    
+    
     
     
     //for(String e: l){

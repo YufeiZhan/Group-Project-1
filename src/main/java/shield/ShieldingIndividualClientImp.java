@@ -41,7 +41,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     String postCode;
   }
   
-  private class Order {
+  final class Order {
     int orderId;
     MessagingFoodBox foodBox;
     LocalDateTime placeTime;
@@ -254,7 +254,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (!orderIds.contains(orderNumber)) return false;
     // precondition: order status is still placed
     String s = getStatusForOrder(orderNumber);
-    if (s != "PLACED") return false;
+    if (!s.equals("placed")) return false;
     
     Order ord = null;
     for (Order o: boxOrders) {
@@ -301,7 +301,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (!orderIds.contains(orderNumber)) return false;
     // precondition: order status is still placed
     String s = getStatusForOrder(orderNumber);
-    if (s == "DELIVERED" || s == "CANCELLED") return false;
+    if (s.equals("delivered") || s.equals("cancelled")) return false;
     
   
     String request = "/cancelOrder?order_id="+orderNumber;
@@ -868,11 +868,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     
     for (Order o: boxOrders) {
       if (o.orderId == orderNumber) {
-        if (o.status == 0) return "PLACED";
-        else if (o.status == 1) return "PACKED";
-        else if (o.status == 2) return "DISPATCHED";
-        else if (o.status == 3) return "DELIVERED";
-        else if (o.status == 4) return "CANCELLED";
+        if (o.status == 0) return "placed";
+        else if (o.status == 1) return "packed";
+        else if (o.status == 2) return "dispatched";
+        else if (o.status == 3) return "delivered";
+        else if (o.status == 4) return "cancelled";
         else return null;
         
       }
@@ -956,8 +956,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (ord == null) return false;
     for (Content c: ord.foodBox.contents) {
       if (c.id == itemId) {
-        c.quantity = quantity;
-        return true;
+        if (quantity < c.quantity) {
+          c.quantity = quantity;
+          return true;
+        }
       }
     }
     return false;
@@ -1000,8 +1002,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   }
   
   //-------------------------getter/setter for testing--------------------------
-  public MessagingFoodBox getMarked() {return marked;}
-  public Collection<Order> getBoxOrders() {return boxOrders;}
-  public ShieldingIndividual getShieldingIndividual() {return shieldingIndividual;}
+  public MessagingFoodBox getMarked() {return this.marked;}
+  public Collection<Order> getBoxOrders() {return this.boxOrders;}
+  public ShieldingIndividual getShieldingIndividual() {return this.shieldingIndividual;}
   
+  public void setBoxOrders(Collection<Order> boxOrders) {
+    this.boxOrders = boxOrders;
+  }
+  
+  public Order getLatest() {return this.latest;}
+  public void setLatest(Order o) {
+    this.latest = o;
+  }
 }
