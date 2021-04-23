@@ -24,7 +24,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private Collection<Order> boxOrders;
   private Order latest = null;
   private MessagingFoodBox marked = null;
-  private List<MessagingFoodBox> defaultBoxes;
+  //private List<MessagingFoodBox> defaultBoxes;
   
   private class ShieldingIndividual {
     String CHI;
@@ -147,7 +147,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     
     // unexpected preference -> empty list
     String[] preference = {"none", "pollotarian", "vegan"};
-    if (!Arrays.asList(preference).contains(dietaryPreference)) return boxIds;
+    if (!Arrays.asList(preference).contains(dietaryPreference.toLowerCase())) return boxIds;
     
     // construct the endpoint request
     String request = "/showFoodBox?orderOption=catering&dietaryPreference=" + dietaryPreference;
@@ -647,8 +647,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     //check validation of foodBoxId
     int range = getFoodBoxNumber();
     if (foodBoxId <= 0 || foodBoxId > range) return null;
-    int itemRange = getItemsNumberForFoodBox(foodBoxId);
-    if (itemId <= 0 || itemId > itemRange) return null;
     
     // construct the endpoint request
     String request = "/showFoodBox?";
@@ -711,8 +709,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     //check validation of foodBoxId
     int range = getFoodBoxNumber();
     if (foodBoxId <= 0 || foodBoxId > range) return -1;
-    int itemRange = getItemsNumberForFoodBox(foodBoxId);
-    if (itemId <= 0 || itemId > itemRange) return -1;
   
     // construct the endpoint request
     String request = "/showFoodBox?";
@@ -796,16 +792,17 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
       responseBoxes = new Gson().fromJson(response, listType);
       
-      MessagingFoodBox foodBox = null;
+      MessagingFoodBox fb = null;
       // gather required fields
       for (MessagingFoodBox b : responseBoxes) {
-        System.out.println("box: " + b.id);
+        //System.out.println("box: " + b.id);
         if (b.id == foodBoxId) {
-          foodBox = b;
+          fb = b;
           break;
         }
       }
-      marked = foodBox;
+      if (fb == null) System.out.println("NULL");
+      marked = fb;
       if (marked != null) return true;
       
     } catch (Exception e) {
@@ -1002,4 +999,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return cateringCompany.name;
    
   }
+  
+  //-------------------------getter/setter for testing--------------------------
+  public MessagingFoodBox getMarked() {return marked;}
+  public Collection<Order> getBoxOrders() {return boxOrders;}
+  public ShieldingIndividual getShieldingIndividual() {return shieldingIndividual;}
+  
 }
