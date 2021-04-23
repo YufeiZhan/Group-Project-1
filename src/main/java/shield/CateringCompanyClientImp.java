@@ -36,7 +36,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     assert name != null;
     assert postCode != null;
     if (name == null || postCode == null) return false;
-    if (! isValidPostCode(postCode)) return false; // check postCode format
+//    if (! isValidPostCode(postCode)) return false; // check postCode format
     if (cateringCompany.isRegistered == true) return true;
     
     String request = "/registerCateringCompany?business name="+name+"&postcode="+postCode;

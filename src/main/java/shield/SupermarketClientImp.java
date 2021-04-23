@@ -181,6 +181,8 @@ public class SupermarketClientImp implements SupermarketClient {
       case "delivered":
         newStatus = 3;
         break;
+      default:
+        break;
     }
 
     if (newStatus > currentStatus){

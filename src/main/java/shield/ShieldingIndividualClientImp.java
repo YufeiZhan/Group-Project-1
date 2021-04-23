@@ -21,9 +21,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private String endpoint;
   private ShieldingIndividual shieldingIndividual;
   private CateringCompany cateringCompany;
-  private Collection<Order> boxOrders;
+  private Collection<Order> boxOrders; //list of all history order
   private Order latest = null;
-  private MessagingFoodBox marked = null;
+  private MessagingFoodBox marked = null; //used as staging
   //private List<MessagingFoodBox> defaultBoxes;
   
   private class ShieldingIndividual {
@@ -48,7 +48,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     int status;
     
   }
-  
   
   // internal field only used for transmission purposes
   final class MessagingFoodBox {
