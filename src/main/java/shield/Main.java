@@ -17,6 +17,7 @@ import java.util.List;
 
 public class Main {
   public static void main(String[] args) {
+
     
     //之前register过的 重新new instance之后，就没办法retrieve info
     //所以isregisered 却没有办法通过server reset user的info
@@ -50,5 +51,8 @@ public class Main {
 //  System.out.println(boxes);
     
     return;
+
+//    SupermarketClientImp supermarket = new SupermarketClientImp();
+
   }
 }

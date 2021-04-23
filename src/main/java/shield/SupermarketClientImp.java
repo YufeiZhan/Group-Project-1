@@ -40,6 +40,9 @@ public class SupermarketClientImp implements SupermarketClient {
 
   @Override
   public boolean registerSupermarket(String name, String postCode) {
+    
+    if(supermarket.isRegistered == true) return true;
+    
     String request = "/registerSupermarket?business_name="+name+"&postcode="+postCode;
     boolean result = false;
     
@@ -124,6 +127,8 @@ public class SupermarketClientImp implements SupermarketClient {
     return supermarket.postCode;
   }
   
+  
+  // ------------------------------------ Public Testing Helper Methods ------------------------------------
   public boolean orderExist(int orderNum){
     for (SupermarketOrder order: orderList){
       if (order.orderNum == orderNum){
@@ -151,6 +156,8 @@ public class SupermarketClientImp implements SupermarketClient {
     }
   }
   
+  
+  // --------------------------------------- Private Helper Methods ---------------------------------------
   private SupermarketOrder getOrderFromList(int orderNum){
     // ++ assertion where orderNum shouldn't be null?
     for (SupermarketOrder order: orderList){
