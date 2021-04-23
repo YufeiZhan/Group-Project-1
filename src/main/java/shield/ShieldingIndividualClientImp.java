@@ -190,13 +190,15 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       getClosestCateringCompany();
     }
     // precondition: haven't ordered this week
+    //System.out.println(1);
     if (latest != null) {
       Duration delta = Duration.between(latest.placeTime, LocalDateTime.now());
       if (delta.toDays() < 7) return false; // even if one seconds smaller than 7 days, it returns 6
     }
+    //System.out.println(2);
     // precondition: a chosen food box has been staged to "marked"
     if (marked == null) return false;
-    
+    //System.out.println(9);
     // marshal data
     Gson gson = new Gson();
     String data = gson.toJson(marked.contents);
@@ -214,13 +216,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     request = endpoint + request;
   
     try {
+      //System.out.println(3);
       // perform request
       String response = ClientIO.doPOSTRequest(request, data);
       assert response != null;
       
       // add into the order history
       int id = Integer.parseInt(response);
-      
+      //System.out.println(4);
       Order newOrder = new Order();
       newOrder.orderId = id;
       newOrder.foodBox = marked;
@@ -256,8 +259,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     
     Order ord = null;
     for (Order o: boxOrders) {
-      if (o.orderId == orderNumber) ord = o;
-      break;
+      if (o.orderId == orderNumber) {
+        ord = o;
+        break;
+      }
     }
     assert ord != null;
   
@@ -312,8 +317,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       if (response.equals("True")) {
         Order ord = null;
         for (Order o: boxOrders) {
-          if (o.orderId == orderNumber) ord = o;
-          break;
+          if (o.orderId == orderNumber) {
+            ord = o;
+            break;
+          }
         }
         assert ord != null;
         ord.status = 4;
@@ -352,8 +359,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   
       Order ord = null;
       for (Order o: boxOrders) {
-        if (o.orderId == orderNumber) ord = o;
-        break;
+        if (o.orderId == orderNumber) {
+          ord = o;
+          break;
+        }
       }
       if (ord == null) return false;
       
@@ -593,8 +602,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       MessagingFoodBox foodBox = null;
       // gather required fields
       for (MessagingFoodBox b : responseBoxes) {
-        if (b.id == foodboxId) foodBox = b;
-        break;
+        if (b.id == foodboxId) {
+          foodBox = b;
+          break;
+        }
       }
       if (foodBox == null) return null;
       
@@ -658,8 +669,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       MessagingFoodBox foodBox = null;
       // gather required fields
       for (MessagingFoodBox b : responseBoxes) {
-        if (b.id == foodBoxId) foodBox = b;
-        break;
+        if (b.id == foodBoxId) {
+          foodBox = b;
+          break;
+        }
       }
       if (foodBox == null) return null;
     
@@ -720,8 +733,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       MessagingFoodBox foodBox = null;
       // gather required fields
       for (MessagingFoodBox b : responseBoxes) {
-        if (b.id == foodBoxId) foodBox = b;
-        break;
+        if (b.id == foodBoxId) {
+          foodBox = b;
+          break;
+        }
       }
       if (foodBox == null) return -1;
     
@@ -776,18 +791,20 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       String response = ClientIO.doGETRequest(endpoint + request);
       assert response != null;
       //System.out.println(response);
-    
+      
       // unmarshal response
       Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
       responseBoxes = new Gson().fromJson(response, listType);
-    
+      
       MessagingFoodBox foodBox = null;
       // gather required fields
       for (MessagingFoodBox b : responseBoxes) {
-        if (b.id == foodBoxId) foodBox = b;
-        break;
+        System.out.println("box: " + b.id);
+        if (b.id == foodBoxId) {
+          foodBox = b;
+          break;
+        }
       }
-      
       marked = foodBox;
       if (marked != null) return true;
       
@@ -828,8 +845,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     
     // change
     for (Content c: marked.contents) {
-      if (c.id == itemId) c.quantity = quantity;
-      break;
+      if (c.id == itemId) {
+        c.quantity = quantity;
+        break;
+      }
     }
     
     return true;
@@ -873,7 +892,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     Order ord = null;
     List<Integer> itemIds = new ArrayList<Integer>();
     for (Order o: boxOrders) {
-      if (o.orderId == orderNumber) ord = o;
+      if (o.orderId == orderNumber) {
+        ord = o;
+        break;
+      }
     }
     if (ord == null) return null;
     for (Content c: ord.foodBox.contents) {
@@ -890,7 +912,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   
     Order ord = null;
     for (Order o: boxOrders) {
-      if (o.orderId == orderNumber) ord = o;
+      if (o.orderId == orderNumber) {
+        ord = o;
+        break;
+      }
     }
     if (ord == null) return null;
     for (Content c: ord.foodBox.contents) {
@@ -906,7 +931,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   
     Order ord = null;
     for (Order o: boxOrders) {
-      if (o.orderId == orderNumber) ord = o;
+      if (o.orderId == orderNumber) {
+        ord = o;
+        break;
+      }
     }
     if (ord == null) return -1;
     for (Content c: ord.foodBox.contents) {
@@ -924,7 +952,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   
     Order ord = null;
     for (Order o: boxOrders) {
-      if (o.orderId == orderNumber) ord = o;
+      if (o.orderId == orderNumber) {
+        ord = o;
+        break;
+      }
     }
     if (ord == null) return false;
     for (Content c: ord.foodBox.contents) {
