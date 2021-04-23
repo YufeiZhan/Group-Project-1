@@ -212,6 +212,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     System.out.println(data);
     
     
+//    TODO: no slash '/' here
     String x = shieldingIndividual.CHI;
     String z = cateringCompany.name;
     String w = cateringCompany.postCode;
@@ -356,6 +357,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   
     request = endpoint + request;
   
+    //TODO: do we really need the boxOrders?
     try {
       // perform request
       String response = ClientIO.doGETRequest(request);
@@ -835,6 +837,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
           break;
         }
       }
+//      TODO: this delete?
       if (fb == null) System.out.println("NULL");
       marked = fb;
       if (marked != null) return true;
@@ -1079,5 +1082,27 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     shieldingIndividual.CHI = CHI;
     shieldingIndividual.registered = true;
     marked = new MessagingFoodBox();
+  }
+  
+  public void setStagedFoodBox(){
+    String request = "/showFoodBox?";
+    
+    // setup the response recepient
+    List<MessagingFoodBox> responseBoxes = new ArrayList<MessagingFoodBox>();
+    
+    try {
+      // perform request
+      String response = ClientIO.doGETRequest(endpoint + request);
+    
+      // unmarshal response
+      Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
+      responseBoxes = new Gson().fromJson(response, listType);
+    
+      //always return the first box for simplicity for tesing purpose
+      MessagingFoodBox fb = responseBoxes.get(0);
+      marked = fb;
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 }
