@@ -41,7 +41,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     String postCode;
   }
   
-  private class Order {
+  final class Order {
     int orderId;
     MessagingFoodBox foodBox;
     LocalDateTime placeTime;
@@ -957,8 +957,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (ord == null) return false;
     for (Content c: ord.foodBox.contents) {
       if (c.id == itemId) {
-        c.quantity = quantity;
-        return true;
+        if (quantity < c.quantity) {
+          c.quantity = quantity;
+          return true;
+        }
       }
     }
     return false;
@@ -1001,8 +1003,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   }
   
   //-------------------------getter/setter for testing--------------------------
-  public MessagingFoodBox getMarked() {return marked;}
-  public Collection<Order> getBoxOrders() {return boxOrders;}
-  public ShieldingIndividual getShieldingIndividual() {return shieldingIndividual;}
+  public MessagingFoodBox getMarked() {return this.marked;}
+  public Collection<Order> getBoxOrders() {return this.boxOrders;}
+  public ShieldingIndividual getShieldingIndividual() {return this.shieldingIndividual;}
   
+  public void setBoxOrders(Collection<Order> boxOrders) {
+    this.boxOrders = boxOrders;
+  }
+  
+  public Order getLatest() {return this.latest;}
+  public void setLatest(Order o) {
+    this.latest = o;
+  }
 }
