@@ -72,6 +72,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public ShieldingIndividualClientImp(String endpoint) {
     this.endpoint = endpoint;
     this.shieldingIndividual = new ShieldingIndividual();
+    this.cateringCompany = new CateringCompany(); //add
   }
 
 // ==================================== Server Endpoints Functions ====================================
@@ -176,11 +177,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean isInSameWeek(LocalDateTime t) {
     Calendar cal1 = Calendar.getInstance();
     int currentYear = cal1.getWeekYear();
-    int currentWeek = cal1.WEEK_OF_YEAR;
+    int currentWeek = cal1.get(Calendar.WEEK_OF_YEAR);
     Calendar cal2 = Calendar.getInstance();
-    cal2.set(t.getYear(), t.getMonthValue(), t.getDayOfMonth(),t.getHour(),t.getMinute(),t.getSecond());
+    cal2.set(t.getYear(), t.getMonthValue()-1, t.getDayOfMonth(),t.getHour(),t.getMinute(),t.getSecond());
     int latestYear = cal2.getWeekYear();
-    int latestWeek = cal2.WEEK_OF_YEAR;
+    int latestWeek = cal2.get(Calendar.WEEK_OF_YEAR);
     if (currentYear == latestYear && currentWeek == latestWeek) return true;
     return false;
   }
@@ -194,9 +195,15 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (cateringCompany == null) {
       getClosestCateringCompany();
     }
-    // precondition: haven't ordered this week
-    Order latest = boxOrders.get(boxOrders.size() - 1);
-    if (isInSameWeek(latest.placeTime) && latest.status != 4) return false;
+    System.out.println("here1");
+    if (cateringCompany == null) return false;
+    System.out.println("here2");
+    // precondition: haven't ordered this week / never ordered
+    if (boxOrders.size() > 0) {
+      Order latest = boxOrders.get(boxOrders.size() - 1);
+      if (isInSameWeek(latest.placeTime) && latest.status != 4) return false;
+    }
+    System.out.println("here3");
     /*
     if (latest != null) {
       Duration delta = Duration.between(latest.placeTime, LocalDateTime.now());
@@ -218,7 +225,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     String x = shieldingIndividual.CHI;
     String z = cateringCompany.name;
     String w = cateringCompany.postCode;
-    String request = "placeOrder?individual_id="+ x +
+    String request = "/placeOrder?individual_id="+ x +
                      "&catering_business_name=" + z +
                      "&catering_postcode=" + w;
   
@@ -228,6 +235,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       //System.out.println(3);
       // perform request
       String response = ClientIO.doPOSTRequest(request, data);
+      System.out.println(response);
       assert response != null;
       
       // add into the order history
@@ -925,7 +933,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   //------------------------- getter/setter for testing--------------------------
   public MessagingFoodBox getMarked() {return this.marked;}
   public void setMarked(MessagingFoodBox b) {this.marked = b;}
-  public Collection<Order> getBoxOrders() {return this.boxOrders;}
+  public List<Order> getBoxOrders() {return this.boxOrders;}
   public ShieldingIndividual getShieldingIndividual() {return this.shieldingIndividual;}
   
   public void setBoxOrders(List<Order> boxOrders) {
@@ -940,15 +948,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     shieldingIndividual.postCode = postCode;
     shieldingIndividual.registered = true;
     marked = new MessagingFoodBox();
+    boxOrders = new ArrayList<Order>();
     // add marked content id .....
   }
   
-  public void setCateringCompany(String name){
+  public void setCateringCompany(String name, String postCode){
     cateringCompany.name = name;
-  }
-  
-  public void setMarked(MessagingFoodBox b){
-    marked = b;
+    cateringCompany.postCode = postCode;
   }
   
   public void setStagedFoodBox(){
