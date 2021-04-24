@@ -115,7 +115,7 @@ public class ShieldingIndividualClientImpTest {
       newOrder2.orderId = 2;
       newOrder2.foodBox = b1;
       newOrder2.placeTime = LocalDateTime.of(2021,4,20,17,45,39);
-      // registeredClient.setLatest(newOrder2);
+      //registeredClient.setLatest(newOrder2);
       List<ShieldingIndividualClientImp.Order> orders = new ArrayList<ShieldingIndividualClientImp.Order>();
       orders.add(newOrder1);
       orders.add(newOrder2);

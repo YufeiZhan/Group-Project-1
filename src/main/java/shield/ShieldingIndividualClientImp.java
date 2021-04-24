@@ -10,10 +10,7 @@ import com.google.gson.reflect.TypeToken;
 import javax.print.attribute.HashPrintServiceAttributeSet;
 import java.lang.reflect.Type;
 import java.time.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   
@@ -175,6 +172,19 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
   }
 
+  // check whether t and now are in the same week
+  public boolean isInSameWeek(LocalDateTime t) {
+    Calendar cal1 = Calendar.getInstance();
+    int currentYear = cal1.getWeekYear();
+    int currentWeek = cal1.WEEK_OF_YEAR;
+    Calendar cal2 = Calendar.getInstance();
+    cal2.set(t.getYear(), t.getMonthValue(), t.getDayOfMonth(),t.getHour(),t.getMinute(),t.getSecond());
+    int latestYear = cal2.getWeekYear();
+    int latestWeek = cal2.WEEK_OF_YEAR;
+    if (currentYear == latestYear && currentWeek == latestWeek) return true;
+    return false;
+  }
+  
   // **UPDATE2** REMOVED PARAMETER
   @Override
   public boolean placeOrder() {
@@ -186,7 +196,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
     // precondition: haven't ordered this week
     Order latest = boxOrders.get(boxOrders.size() - 1);
-    //TODO: check if they were with the same week
+    if (isInSameWeek(latest.placeTime) && latest.status != 4) return false;
     /*
     if (latest != null) {
       Duration delta = Duration.between(latest.placeTime, LocalDateTime.now());
@@ -753,6 +763,35 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
     return -1;
   }
+  /*
+  public boolean pickOrderToEdit(int orderNumber) {
+    // precondition: isRegistered()
+    if (!isRegistered()) return false;
+    // precondition: orderNumber exist
+    Collection<Integer> orderIds = getOrderNumbers();
+    if (!orderIds.contains(orderNumber)) return false;
+    // precondition: order status is still placed
+    boolean success = requestOrderStatus(orderNumber); // update local order status
+    if (!success) return false;
+    String s = getStatusForOrder(orderNumber);
+    if (!s.equals("placed")) return false;
+    
+    for (Order o: boxOrders) {
+      if (o.orderId == orderNumber) {
+        Gson gson = new Gson();
+        String ct = gson.toJson(o);
+        
+        Type listType = new TypeToken<Order>() {} .getType();
+        toBeEdited = new Gson().fromJson(ct, listType);
+        
+        //toBeEdited = o; //TODO: need deep copy
+        break;
+      }
+    }
+    return toBeEdited != null;
+  }
+  */
+  
   
   public boolean pickOrderToEdit(int orderNumber) {
     // precondition: isRegistered()
