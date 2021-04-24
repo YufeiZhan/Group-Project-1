@@ -321,7 +321,7 @@ public class ShieldingIndividualClientImpTest {
   @Test
   public void testPickFoodBox() {
     //test registered user with invalid food box
-    assertFalse(registeredClient.pickFoodBox(10),"Invalid food box should be unsuccessful.");
+    assertFalse(registeredClient.pickFoodBox(registeredClient.getFoodBoxNumber()+1),"Invalid food box should be unsuccessful.");
     
     //test registered user with valid food box
     for (int i=1; i<=5; i++) {
@@ -332,8 +332,6 @@ public class ShieldingIndividualClientImpTest {
     for (int i=1; i<=5; i++){
       assertFalse(newClient.pickFoodBox(i),"Unregistered new shouldn't be able to use this method.");
     }
-    
-  
   }
   
   @Test
