@@ -1142,15 +1142,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public Order getToBeEdited() { return this.toBeEdited; }
   public void setToBeEdited(Order o) { this.toBeEdited = o; }
   
-  public void setShieldingIndividual(String CHI){
+  public void setShieldingIndividual(String CHI, String postCode){
     shieldingIndividual.CHI = CHI;
+    shieldingIndividual.postCode = postCode;
     shieldingIndividual.registered = true;
     marked = new MessagingFoodBox();
     // add marked content id .....
   }
   
   public void setCateringCompany(String name){
-    cateringCompany.name == name;
+    cateringCompany.name = name;
   }
   
   public void setStagedFoodBox(){

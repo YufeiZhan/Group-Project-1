@@ -83,7 +83,7 @@ public class ShieldingIndividualClientImpTest {
     // -------Closest Catering Company-------
     generalTestPostcode = "EH16_5AY";
     closestCateringCompanyName = "tempCateringCompanyForTestInShieldingClient";
-    String closestCateringCompanyRegistrationRequest = "registerCateringCompany?business_name="+closestCateringCompanyName+"&postcode="+generalTestPostcode;
+    String closestCateringCompanyRegistrationRequest = "/registerCateringCompany?business_name="+closestCateringCompanyName+"&postcode="+generalTestPostcode;
     closestCateringCompanyClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     String closestCateringCompanyCHI = "0202020000";
     String closestCateringCompanyClientRegistrationRequest = "/registerShieldingIndividual?CHI=" + closestCateringCompanyCHI;
@@ -139,7 +139,7 @@ public class ShieldingIndividualClientImpTest {
     //test new client registration
     assertFalse(newClient.isRegistered());
     assertTrue(newClient.registerShieldingIndividual(newCHI));
-    newClient.setShieldingIndividual(newCHI); // TODO: comment out this line if use unregistered newCHI to test each time
+    newClient.setShieldingIndividual(newCHI,generalTestPostcode); // TODO: comment out this line if use unregistered newCHI to test each time
     assertTrue(newClient.isRegistered());
     assertEquals(newCHI,newClient.getCHI(),"Newly registered user should have identical CHI");
 
@@ -474,7 +474,7 @@ public class ShieldingIndividualClientImpTest {
   
   @Test
   public void testGetClosestCateringCompany() {
-    assertEquals(closestCateringCompanyName,closestCateringCompanyClient.getClosestCateringCompany(),"Closest Catering Company is incorrect.")
+    assertEquals(closestCateringCompanyName,closestCateringCompanyClient.getClosestCateringCompany(),"Closest Catering Company is incorrect.");
   }
   
   @Test
