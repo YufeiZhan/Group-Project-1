@@ -944,12 +944,19 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     
     for (Order o: boxOrders) {
       if (o.orderId == orderNumber) {
-        if (o.status == 0) return "placed";
+        System.out.println(o.status);
+        if (o.status == 0) {
+          System.out.println("se");
+          return "placed";
+        }
         else if (o.status == 1) return "packed";
         else if (o.status == 2) return "dispatched";
         else if (o.status == 3) return "delivered";
         else if (o.status == 4) return "cancelled";
-        else return null;
+        else {
+          System.out.println("no");
+          return null;
+        }
         
       }
     }
@@ -1056,15 +1063,22 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean pickOrderToEdit(int orderNumber) {
     // precondition: isRegistered()
     if (!isRegistered()) return false;
+    System.out.println(1);
     // precondition: orderNumber exist
     Collection<Integer> orderIds = getOrderNumbers();
+    System.out.println(2);
     if (!orderIds.contains(orderNumber)) return false;
     // precondition: order status is still placed
     boolean success = requestOrderStatus(orderNumber); // update local order status
+    System.out.println(3);
     if (!success) return false;
+    System.out.println(4);
     String s = getStatusForOrder(orderNumber);
+    System.out.println(5);
+    System.out.println(s);
     if (!s.equals("placed")) return false;
-    
+  
+    System.out.println(6);
     for (Order o: boxOrders) {
       if (o.orderId == orderNumber) {
         Gson gson = new Gson();
@@ -1088,14 +1102,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean setItemQuantityForOrder(int itemId, int orderNumber, int quantity) { // currently work for all order
     // check individual's validity to use methods
     if (!isRegistered()) return false;
-    
+    System.out.println("s1");
     //check validation of inputs
     if (boxOrders == null) return false; //what if used in place order
                                          // and the order is the first order ever that this individual have placed.
                                          // that is, boxOrders is indeed null;
-    
+    System.out.println("s2");
     if (toBeEdited == null || toBeEdited.orderId != orderNumber) {
+      System.out.println("s4");
       boolean success = pickOrderToEdit(orderNumber);
+      System.out.println(success);
       if (!success) return false;
     }
     assert (toBeEdited.orderId == orderNumber);
@@ -1115,6 +1131,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       if (c.id == itemId) {
         if (quantity < c.quantity) {
           c.quantity = quantity;
+          System.out.println("q:"+c.quantity);
           return true;
         }
       }
