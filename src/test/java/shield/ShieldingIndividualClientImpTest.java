@@ -376,6 +376,7 @@ public class ShieldingIndividualClientImpTest {
     assertTrue(registeredClient.setItemQuantityForOrder(1,2,0),"Incorrect item");
     assertTrue(registeredClient.setItemQuantityForOrder(2,2,1),"Incorrect item");
     assertTrue(registeredClient.setItemQuantityForOrder(6,2,0),"Incorrect item");
+    // the updates to latest
     // invalid user
     assertFalse(registeredClient.setItemQuantityForOrder(1,2,0),"New client shouldn't have ordered");
     assertFalse(registeredClient.setItemQuantityForOrder(2,2,1),"New client shouldn't have ordered");
@@ -383,7 +384,6 @@ public class ShieldingIndividualClientImpTest {
   
   @Test
   public void testGetClosestCateringCompany() {
-    
   }
   
   
