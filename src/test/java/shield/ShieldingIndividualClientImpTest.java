@@ -37,8 +37,7 @@ public class ShieldingIndividualClientImpTest {
   
 //  private ShieldingIndividualClientImp placedOrderClient;
 //  private String placedOrderCHI;
-
-  private String testCHI;
+  
   private ShieldingIndividualClientImp registeredClient2; //add
   private String testCHI2; //add
 
@@ -61,7 +60,7 @@ public class ShieldingIndividualClientImpTest {
     clientProps = loadProperties(clientPropsFilename);
   
     newClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
-    newCHI = "0101110008";
+    newCHI = "0101111222";
     
   
     registeredClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
@@ -88,7 +87,7 @@ public class ShieldingIndividualClientImpTest {
 //      registeredClient.setStagedFoodBox();
   
       //-------------setOrders----------------
-      registeredClient.setShieldingIndividual(testCHI);
+      //registeredClient.setShieldingIndividual(testCHI);
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegistration2Request); //add
       registeredClient2.setShieldingIndividual(testCHI2); //add
       String box1 = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
