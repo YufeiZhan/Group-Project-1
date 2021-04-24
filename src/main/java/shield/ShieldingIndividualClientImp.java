@@ -26,7 +26,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private MessagingFoodBox marked = null; //used as staging
   //private List<MessagingFoodBox> defaultBoxes;
   
-  private class ShieldingIndividual {
+  private static class ShieldingIndividual { //make all inner class static
     String CHI = null;
     String postCode = null;
     String name = null;
@@ -35,13 +35,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     boolean registered = false;
   }
   
-  private class CateringCompany {
+  private static class CateringCompany {
     String id;
     String name;
     String postCode;
   }
   
-  final class Order {
+  final static class Order {
     int orderId;
     MessagingFoodBox foodBox;
     LocalDateTime placeTime;
@@ -50,7 +50,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   }
   
   // internal field only used for transmission purposes
-  final class MessagingFoodBox {
+  final static class MessagingFoodBox {
     // a field marked as transient is skipped in marshalling/unmarshalling
     List<Content> contents = null;
     //transient
@@ -60,7 +60,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     String name = null;
   }
  
-  final class Content {
+  final static class Content {
     int id = -1;
     String name = null;
     int quantity = -1;
@@ -608,7 +608,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     //check validation of foodBoxId
     int range = getFoodBoxNumber();
     if (foodboxId <= 0 || foodboxId > range) return null;
-  
+    System.out.println(7);
     // construct the endpoint request
     String request = "/showFoodBox?";
   
@@ -634,7 +634,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
           break;
         }
       }
+      System.out.println(8);
       if (foodBox == null) return null;
+      System.out.println(9);
       
       for (Content c: foodBox.contents) {
         items.add(c.id);
@@ -643,6 +645,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       
     } catch (Exception e) {
       e.printStackTrace();
+      System.out.println(10);
       return null;
     }
     
@@ -878,17 +881,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     Collection<Integer> itemIds = getItemIdsForFoodBox(boxId);
     if (!itemIds.contains(itemId)) return false;
     int q = getItemQuantityForFoodBox(itemId,boxId);
-    if (q < quantity) return false;
-    
+    if (q < quantity || quantity < 0) return false;
     // change
     for (Content c: marked.contents) {
       if (c.id == itemId) {
         c.quantity = quantity;
-        break;
+        return true; // revise
       }
     }
+    return false; // revise
     
-    return true;
   }
 
   @Override
@@ -1004,15 +1006,15 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (boxOrders == null) return false; //what if used in place order
                                          // and the order is the first order ever that this individual have placed.
                                          // that is, boxOrders is indeed null;
-  
+    // only orders valid for editing could be set successfully to keep sync to server
     Order ord = null;
     for (Order o: boxOrders) {
-      if (o.orderId == orderNumber) {
+      if (o.orderId == orderNumber && o.status == 0) {
         ord = o;
         break;
       }
     }
-    if (ord == null) return false;
+    if (ord == null) return false;  // return false if un-found order or could not be edited
     for (Content c: ord.foodBox.contents) {
       if (c.id == itemId) {
         if (quantity < c.quantity) {
@@ -1082,6 +1084,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     shieldingIndividual.CHI = CHI;
     shieldingIndividual.registered = true;
     marked = new MessagingFoodBox();
+    // add marked content id .....
   }
   
   public void setStagedFoodBox(){
