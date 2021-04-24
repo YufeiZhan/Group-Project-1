@@ -60,7 +60,7 @@ public class ShieldingIndividualClientImpTest {
     clientProps = loadProperties(clientPropsFilename);
   
     newClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
-    newCHI = "0101111222";
+    newCHI = "0101111245";
     
   
     registeredClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
@@ -126,6 +126,7 @@ public class ShieldingIndividualClientImpTest {
     //test new client registration
     assertFalse(newClient.isRegistered());
     assertTrue(newClient.registerShieldingIndividual(newCHI));
+    newClient.setShieldingIndividual(newCHI); // TODO: comment out this line if use unregistered newCHI to test each time
     assertTrue(newClient.isRegistered());
     assertEquals(newCHI,newClient.getCHI(),"Newly registered user should have identical CHI");
 
@@ -324,8 +325,10 @@ public class ShieldingIndividualClientImpTest {
   
   @Test
   public void testChangeItemQuantityForPickedFoodBox() {
-    // haven't picked any box
-    assertFalse(registeredClient.changeItemQuantityForPickedFoodBox(2,1),"Should pick food box first");
+    // haven't picked any box (marked == null)
+    registeredClient.setMarked(null);
+    assertFalse(registeredClient.changeItemQuantityForPickedFoodBox(2, 1), "Should pick food box first");
+    
     // pick food box 1: try to change item not exists
     registeredClient.pickFoodBox(1);
     assertFalse(registeredClient.changeItemQuantityForPickedFoodBox(3,1), "No such item in this food box");
@@ -359,7 +362,7 @@ public class ShieldingIndividualClientImpTest {
   }
   
   @Test
-  public void testGetStatusForOrder() {
+  public void testGetStatusForOrder() { // query sever
     // no order history
     assertNull(registeredClient2.getStatusForOrder(1),"Haven't ordered yet");
     assertNull(registeredClient2.getStatusForOrder(2),"Haven't ordered yet");

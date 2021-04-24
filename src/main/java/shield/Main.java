@@ -171,7 +171,7 @@ public class Main {
     boolean place2 = test.placeOrder();  //within 7 days
     System.out.println("ed4");
     assert place2 == false;
-  
+    /*
     //--------------------Orders related need to set order list-----------------------
     ShieldingIndividualClientImp.Order orderPlaced = test.getLatest();
     int orderId = orderPlaced.orderId;
@@ -187,7 +187,7 @@ public class Main {
       System.out.println("order item quantity: " + test.getItemQuantityForOrder(i,orderId));
     }
     //--------------------getStatusForOrder()-----------------------
-  
+  */
   
   
   

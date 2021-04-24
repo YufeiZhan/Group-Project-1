@@ -7,6 +7,7 @@ package shield;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import javax.print.attribute.HashPrintServiceAttributeSet;
 import java.lang.reflect.Type;
 import java.time.*;
 import java.util.ArrayList;
@@ -21,8 +22,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private String endpoint;
   private ShieldingIndividual shieldingIndividual;
   private CateringCompany cateringCompany;
-  private Collection<Order> boxOrders; //list of all history order
-  private Order latest = null;
+  //private Collection<Order> boxOrders; //list of all history order TODO: turn into list
+  private List<Order> boxOrders;
+  //private Order latest = null; //used as staging for editing box
+  private Order toBeEdited = null;
   private MessagingFoodBox marked = null; //used as staging
   //private List<MessagingFoodBox> defaultBoxes;
   
@@ -80,7 +83,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (CHI.length() != 10) return false;
     // format
     if (!CHI.matches("[0-9]{10}")) return false;
-//    System.out.println("1");
+    System.out.println(1);
     
     int dd = Integer.parseInt(CHI.substring(0,2));
     int mm = Integer.parseInt(CHI.substring(2,4));
@@ -92,21 +95,21 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       dateIsValid = false;
     }
     if (!dateIsValid) return false;
-//    System.out.println("2");
+    System.out.println("2");
     
     // construct the endpoint request
     String request = "/registerShieldingIndividual?CHI=" + CHI;
   
     // setup the response recepient
     List<String> responseDetail = new ArrayList<String>();
-    
+    System.out.println(7);
     try {
       // perform request
       String response = ClientIO.doGETRequest(endpoint + request);
       assert response != null;
-      
+      System.out.println(response.equals("already registered"));
       if (response.equals("already registered")) return true;
-      
+      System.out.println(4);
       // unmarshal response
       Type listType = new TypeToken<Collection<String>>() {}.getType();
       responseDetail = new Gson().fromJson(response, listType);
@@ -119,9 +122,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       shieldingIndividual.phoneNumber = responseDetail.get(3);
       shieldingIndividual.CHI = CHI;
       shieldingIndividual.registered = true;
-      
+      System.out.println(5);
       //set cateringCompany
       getClosestCateringCompany();
+      System.out.println(6);
       //set order list
       boxOrders = new ArrayList<Order>();
       //set default box
@@ -130,8 +134,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       return true;
       
     } catch (Exception e) {
+      System.out.println(3);
       e.printStackTrace();
-//      System.out.println("3");
       return false;
     }
     
@@ -196,12 +200,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       getClosestCateringCompany();
     }
     // precondition: haven't ordered this week
-    //System.out.println(1);
+    Order latest = boxOrders.get(boxOrders.size() - 1);
+    //TODO: check if they were with the same week
+    /*
     if (latest != null) {
       Duration delta = Duration.between(latest.placeTime, LocalDateTime.now());
-      if (delta.toDays() < 7) return false; // even if one seconds smaller than 7 days, it returns 6
+      if (delta.toDays() < 7 && latest.status != 4) return false; // even if one seconds smaller than 7 days, it returns 6
     }
-    //System.out.println(2);
+     
+     */
+    
     // precondition: a chosen food box has been staged to "marked"
     if (marked == null) return false;
     //System.out.println(9);
@@ -236,9 +244,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       newOrder.foodBox = marked;
       newOrder.placeTime = LocalDateTime.now();
       newOrder.status = 0;
-      boxOrders.add(newOrder);
+      boxOrders.add(newOrder); // new order added to the end of the list
       
-      latest = newOrder;
+      //latest = newOrder;
       // clear marked
       marked = null;
       
@@ -258,13 +266,18 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     
     // precondition: isRegistered()
     if (!isRegistered()) return false;
+    // successfully toBeEdited has been set up
+    if (toBeEdited == null) return false;
+    assert toBeEdited != null: "toBeEdited should have been set";
     // precondition: orderNumber exist
-    Collection<Integer> orderIds = getOrderNumbers();
-    if (!orderIds.contains(orderNumber)) return false;
+    //Collection<Integer> orderIds = getOrderNumbers();
+    //if (!orderIds.contains(orderNumber)) return false;
     // precondition: order status is still placed
-    String s = getStatusForOrder(orderNumber);
-    if (!s.equals("placed")) return false;
-    
+    //boolean success = requestOrderStatus(orderNumber); // update local order status
+    //assert success;
+    //String s = getStatusForOrder(orderNumber);
+    //if (!s.equals("placed")) return false;
+    /*
     Order ord = null;
     for (Order o: boxOrders) {
       if (o.orderId == orderNumber) {
@@ -273,10 +286,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       }
     }
     assert ord != null;
-  
+    */
     // marshal data
     Gson gson = new Gson();
-    String data = gson.toJson(ord.foodBox.contents);
+    String data = gson.toJson(toBeEdited.foodBox.contents);
     data = "{\"contents\":" + data + "}";
     //System.out.println(data);
     
@@ -288,10 +301,25 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       // perform request
       String response = ClientIO.doPOSTRequest(request, data);
       assert response != null;
-    
+      
+      /*
       if (response.equals("True")) {
         // check if latest order is this one, if it is, then update
         if (latest.orderId == orderNumber) latest = ord;
+        return true;
+      }
+      */
+      if (response.equals("True")) {
+        int idx = -1;
+        for (int i = 0; i < boxOrders.size(); i++) {
+          if (boxOrders.get(i).orderId == orderNumber) {
+            idx = i;
+            break;
+          }
+        }
+        assert idx != -1;
+        boxOrders.set(idx, toBeEdited);
+        toBeEdited = null;
         return true;
       }
     
@@ -309,6 +337,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     Collection<Integer> orderIds = getOrderNumbers();
     if (!orderIds.contains(orderNumber)) return false;
     // precondition: order status is still placed
+    boolean success = requestOrderStatus(orderNumber); // update local order status
+    if (!success) return false;
     String s = getStatusForOrder(orderNumber);
     if (s.equals("delivered") || s.equals("cancelled")) return false;
     
@@ -323,18 +353,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       assert response != null;
     
       if (response.equals("True")) {
-        Order ord = null;
         for (Order o: boxOrders) {
           if (o.orderId == orderNumber) {
-            ord = o;
-            break;
+            o.status = 4;
+            return true;
           }
         }
-        assert ord != null;
-        ord.status = 4;
-        // check if latest order is this one, if it is, then update
-        if (latest.orderId == orderNumber) latest = ord;
-        return true;
       }
     
     } catch (Exception e) {
@@ -350,7 +374,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     // precondition: orderNumber exist
     Collection<Integer> orderIds = getOrderNumbers();
     if (!orderIds.contains(orderNumber)) return false;
-    // precondition: order status is still placed
   
   
     String request = "/requestStatus?order_id="+orderNumber;
@@ -365,27 +388,18 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       
       int s = Integer.parseInt(response);
       assert -1 <= s && s <= 4;
-  
-      Order ord = null;
+      
       for (Order o: boxOrders) {
         if (o.orderId == orderNumber) {
-          ord = o;
-          break;
+          o.status = s;
+          return true;
         }
       }
-      if (ord == null) return false;
       
-      ord.status = s;
-      // check if latest order is this one, if it is, then update
-      if (latest.orderId == orderNumber) latest = ord;
-      return true;
-      
-    
     } catch (Exception e) {
       e.printStackTrace();
-      return false;
     }
-    
+    return false;
   }
 
   // **UPDATE**
@@ -549,10 +563,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   }
 
   @Override
-  public int getItemsNumberForFoodBox(int foodBoxId) {
-    // check individual's validity to use methods
-    if (!isRegistered()) return -1;
-    
+  public int getItemsNumberForFoodBox(int foodBoxId) {     //item diet:getDiretary(id)
+    // check individual's validity to use methods          //list of box = showfoodbox(diet)
+    if (!isRegistered()) return -1;                        //iterate list to get the box
+                                                           //get item num for food box
     //check validation of foodBoxId
     int range = getFoodBoxNumber();
     if (foodBoxId <= 0 || foodBoxId > range) return -1;
@@ -908,6 +922,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   }
 
   @Override
+  //Todo: check server first
   public String getStatusForOrder(int orderNumber) {
     // check individual's validity to use methods
     if (!isRegistered()) return null;
@@ -996,8 +1011,34 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
     return -1;
   }
-
+  
+  public boolean pickOrderToEdit(int orderNumber) {
+    // precondition: isRegistered()
+    if (!isRegistered()) return false;
+    // precondition: orderNumber exist
+    Collection<Integer> orderIds = getOrderNumbers();
+    if (!orderIds.contains(orderNumber)) return false;
+    // precondition: order status is still placed
+    boolean success = requestOrderStatus(orderNumber); // update local order status
+    if (!success) return false;
+    String s = getStatusForOrder(orderNumber);
+    if (!s.equals("placed")) return false;
+    
+    for (Order o: boxOrders) {
+      if (o.orderId == orderNumber) {
+        toBeEdited = o; //TODO: need deep copy
+        break;
+      }
+    }
+    return toBeEdited != null;
+  }
+  
   @Override
+  //Todo: so have no previous knowledge about server at all
+  //Todo: if decrease quantity first
+  
+  //eliminate the pick step. if orderNum equal to orderNum of toBeEdit; then modify it
+  //if not, then add some thing to toBeEdit
   public boolean setItemQuantityForOrder(int itemId, int orderNumber, int quantity) { // currently work for all order
     // check individual's validity to use methods
     if (!isRegistered()) return false;
@@ -1006,6 +1047,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (boxOrders == null) return false; //what if used in place order
                                          // and the order is the first order ever that this individual have placed.
                                          // that is, boxOrders is indeed null;
+    
+    if (toBeEdited == null || toBeEdited.orderId != orderNumber) {
+      boolean success = pickOrderToEdit(orderNumber);
+      if (!success) return false;
+    }
+    assert (toBeEdited.orderId == orderNumber);
+    
+    /*
     // only orders valid for editing could be set successfully to keep sync to server
     Order ord = null;
     for (Order o: boxOrders) {
@@ -1015,7 +1064,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       }
     }
     if (ord == null) return false;  // return false if un-found order or could not be edited
-    for (Content c: ord.foodBox.contents) {
+     */
+    for (Content c: toBeEdited.foodBox.contents) {
       if (c.id == itemId) {
         if (quantity < c.quantity) {
           c.quantity = quantity;
@@ -1033,17 +1083,17 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public String getClosestCateringCompany() {
     // check individual's validity to use methods
     if (!isRegistered()) return null;
-    
     Collection<String> companies = getCateringCompanies();
     assert companies != null:"Fail to Get Catering Companies";
     List<String> caters = new ArrayList<String>(companies);
+    
     if (caters.size() < 1) return null;
   
     //get the distance of the first cater as baseline
     List<String> info = Arrays.asList(caters.get(0).split(","));
     String pc = info.get(2);
     float d = getDistance(shieldingIndividual.postCode,pc);
-    //System.out.println(d);
+    //System.out.println("d");
     
     for (String c: caters.subList(1,caters.size())) { //search from the second cater in the list
       List<String> moreInfo = Arrays.asList(c.split(","));
@@ -1068,17 +1118,21 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   
   //------------------------- getter/setter for testing--------------------------
   public MessagingFoodBox getMarked() {return this.marked;}
+  public void setMarked(MessagingFoodBox b) {this.marked = b;}
   public Collection<Order> getBoxOrders() {return this.boxOrders;}
   public ShieldingIndividual getShieldingIndividual() {return this.shieldingIndividual;}
   
-  public void setBoxOrders(Collection<Order> boxOrders) {
+  public void setBoxOrders(List<Order> boxOrders) {
     this.boxOrders = boxOrders;
   }
   
-  public Order getLatest() {return this.latest;}
-  public void setLatest(Order o) {
-    this.latest = o;
-  }
+  //public Order getLatest() {return this.latest;}
+  //public void setLatest(Order o) {
+    //this.latest = o;
+  //}
+  
+  public Order getToBeEdited() { return this.toBeEdited; }
+  public void setToBeEdited(Order o) { this.toBeEdited = o; }
   
   public void setShieldingIndividual(String CHI){
     shieldingIndividual.CHI = CHI;
