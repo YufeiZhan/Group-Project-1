@@ -35,6 +35,11 @@ public class ShieldingIndividualClientImpTest {
   private int registeredInvalidOrderNum;
   
   
+  private ShieldingIndividualClientImp closestCateringCompanyClient;
+  private String closestCateringCompanyName;
+  private String generalTestPostcode;
+  
+  
 //  private ShieldingIndividualClientImp placedOrderClient;
 //  private String placedOrderCHI;
   
@@ -66,30 +71,34 @@ public class ShieldingIndividualClientImpTest {
     registeredClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     registeredCHI = "0505150000";
     String userRegistrationRequest = "/registerShieldingIndividual?CHI="+registeredCHI;
-//    String registeredCateringCompanyName = "tempCateringCompanyForTestInShieldingClient";
-//    String registeredCCPostCode = "EH16_5AY";
-//    String cateringCompanyRegistrationRequest = "registerCateringCompany?business_name="+registeredCateringCompanyName+"&postcode="+registeredCCPostCode;
 //    registeredInvalidOrderNum = 10000;
 //    String placedOrderRequest = "/placeOrder?individual_id="+registeredCHI+"&catering_business_name="+registeredCateringCompanyName+"&catering_postcode="+registeredCCPostCode;
 
-    
   
     registeredClient2 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));  //add
     testCHI2 = "0505150110"; //add
     String userRegistration2Request = "/registerShieldingIndividual?CHI="+testCHI2; //add
+    
+    
+    // -------Closest Catering Company-------
+    generalTestPostcode = "EH16_5AY";
+    closestCateringCompanyName = "tempCateringCompanyForTestInShieldingClient";
+    String closestCateringCompanyRegistrationRequest = "/registerCateringCompany?business_name="+closestCateringCompanyName+"&postcode="+generalTestPostcode;
+    closestCateringCompanyClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+    String closestCateringCompanyCHI = "0202020000";
+    String closestCateringCompanyClientRegistrationRequest = "/registerShieldingIndividual?CHI=" + closestCateringCompanyCHI;
+    
   
     try {
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegistrationRequest);
-
-//      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + cateringCompanyRegistrationRequest);
 //      registeredValidOrderNum = ClientIO.doGETRequest(clientProps.getProperty("endpoint") + placedOrderRequest);
-      registeredClient.setShieldingIndividual(registeredCHI);
+      registeredClient.setShieldingIndividual(registeredCHI,generalTestPostcode);
 //      registeredClient.setStagedFoodBox();
   
       //-------------setOrders----------------
       //registeredClient.setShieldingIndividual(testCHI);
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegistration2Request); //add
-      registeredClient2.setShieldingIndividual(testCHI2); //add
+      registeredClient2.setShieldingIndividual(testCHI2,generalTestPostcode); //add
       String box1 = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
                     "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}],\"delivered_by\":\"catering\"," +
                     "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}";
@@ -111,7 +120,11 @@ public class ShieldingIndividualClientImpTest {
       orders.add(newOrder1);
       orders.add(newOrder2);
       registeredClient.setBoxOrders(orders);
-      //-------------setOrders----------------
+      
+      //-------------Closest Company----------------
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + closestCateringCompanyRegistrationRequest);
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + closestCateringCompanyClientRegistrationRequest);
+      closestCateringCompanyClient.setShieldingIndividual(closestCateringCompanyCHI,generalTestPostcode);
 
     } catch (IOException e) {
       e.printStackTrace();
@@ -126,7 +139,7 @@ public class ShieldingIndividualClientImpTest {
     //test new client registration
     assertFalse(newClient.isRegistered());
     assertTrue(newClient.registerShieldingIndividual(newCHI));
-    newClient.setShieldingIndividual(newCHI); // TODO: comment out this line if use unregistered newCHI to test each time
+    newClient.setShieldingIndividual(newCHI,generalTestPostcode); // TODO: comment out this line if use unregistered newCHI to test each time
     assertTrue(newClient.isRegistered());
     assertEquals(newCHI,newClient.getCHI(),"Newly registered user should have identical CHI");
 
@@ -461,6 +474,7 @@ public class ShieldingIndividualClientImpTest {
   
   @Test
   public void testGetClosestCateringCompany() {
+    assertEquals(closestCateringCompanyName,closestCateringCompanyClient.getClosestCateringCompany(),"Closest Catering Company is incorrect.");
   }
   
   @Test
