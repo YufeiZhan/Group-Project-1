@@ -106,7 +106,7 @@ public class ShieldingIndividualClientImpTest {
       newOrder2.orderId = 2;
       newOrder2.foodBox = b1;
       newOrder2.placeTime = LocalDateTime.of(2021,4,20,17,45,39);
-      registeredClient.setLatest(newOrder2);
+      //registeredClient.setLatest(newOrder2);
       List<ShieldingIndividualClientImp.Order> orders = new ArrayList<ShieldingIndividualClientImp.Order>();
       orders.add(newOrder1);
       orders.add(newOrder2);
@@ -463,6 +463,31 @@ public class ShieldingIndividualClientImpTest {
   public void testGetClosestCateringCompany() {
   }
   
+  @Test
+  public void pickOrderToEdit() {
+    boolean success = registeredClient.pickOrderToEdit(2);
+    assert success;
+    ShieldingIndividualClientImp.Order o = registeredClient.getToBeEdited();
+    assertEquals(2,o.orderId);
+    assertEquals(0,o.status);
+    assertEquals(LocalDateTime.of(2021,4,20,17,45,39),o.placeTime);
   
+    String box1 = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
+            "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}],\"delivered_by\":\"catering\"," +
+            "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}";
+    Type listType = new TypeToken<ShieldingIndividualClientImp.MessagingFoodBox>() {} .getType();
+    ShieldingIndividualClientImp.MessagingFoodBox b1 = new Gson().fromJson(box1, listType);
+    assertEquals(o.foodBox.id, b1.id);
+    boolean check = registeredClient.setItemQuantityForOrder(2,2,1);
+    assert check;
+    int amount = -1;
+    Collection<ShieldingIndividualClientImp.Content> cts = registeredClient.getToBeEdited().foodBox.contents;
+    for (ShieldingIndividualClientImp.Content c: cts) {
+      if (c.id == 2) amount = c.quantity;
+    }
+    assertEquals(1,amount);
+    
+    assertEquals(2,registeredClient.getItemQuantityForOrder(2,2));
+  }
   
 }

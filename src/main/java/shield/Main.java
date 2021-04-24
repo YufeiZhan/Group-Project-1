@@ -6,25 +6,24 @@
 package shield;
 
 import java.time.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
-import java.util.List;
 
 public class Main {
   public static void main(String[] args) {
-  
-  
+ 
     //之前register过的 重新new instance之后，就没办法retrieve info
     //所以isregisered 却没有办法通过server reset user的info
   
     ShieldingIndividualClientImp test = new ShieldingIndividualClientImp("http://0.0.0.0:5000/");
-    test.registerShieldingIndividual("1212120160");
-    assert test.isRegistered();
+   // test.registerShieldingIndividual("1212120163");
+   // assert test.isRegistered();
+   LocalDateTime t = LocalDateTime.of(2020,12,31,12,1,0);
+   assert test.isInSameWeek(t);
     
     /*
     boolean success = test.pickFoodBox(2);
@@ -32,6 +31,8 @@ public class Main {
     boolean check = test.placeOrder();
     System.out.println(check);
     */
+    
+    /*
     //----------------placeOrder() fail if no food box is staged----------------
     //----------------changeItemQuantityForPickedFoodBox() failed same----------------
     boolean s = test.placeOrder();
@@ -171,6 +172,10 @@ public class Main {
     boolean place2 = test.placeOrder();  //within 7 days
     System.out.println("ed4");
     assert place2 == false;
+    
+    
+    
+     */
     /*
     //--------------------Orders related need to set order list-----------------------
     ShieldingIndividualClientImp.Order orderPlaced = test.getLatest();
