@@ -43,8 +43,11 @@ public class ShieldingIndividualClientImpTest {
 //  private ShieldingIndividualClientImp placedOrderClient;
 //  private String placedOrderCHI;
   
-  private ShieldingIndividualClientImp registeredClient2; //add
-  private String testCHI2; //add
+  private ShieldingIndividualClientImp registeredClient2; // with no order history
+  private String testCHI2; 
+  
+  private ShieldingIndividualClientImp registeredClient3; // with latest order placed last week
+  private String testCHI3;
 
   private Properties loadProperties(String propsFilename) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -80,6 +83,10 @@ public class ShieldingIndividualClientImpTest {
     String userRegistration2Request = "/registerShieldingIndividual?CHI="+testCHI2; //add
     
     
+    registeredClient3 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+    testCHI3 = "0504130000";
+    String userRegistration3Request = "/registerShieldingIndividual?CHI="+testCHI3;
+    
     // -------Closest Catering Company-------
     generalTestPostcode = "EH16_5AY";
     closestCateringCompanyName = "tempCateringCompanyForTestInShieldingClient";
@@ -96,15 +103,16 @@ public class ShieldingIndividualClientImpTest {
 //      registeredClient.setStagedFoodBox();
   
       //-------------setOrders----------------
-      //registeredClient.setShieldingIndividual(testCHI);
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegistration2Request); //add
       registeredClient2.setShieldingIndividual(testCHI2,generalTestPostcode); //add
       String box1 = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
                     "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}],\"delivered_by\":\"catering\"," +
                     "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}";
       Type listType = new TypeToken<ShieldingIndividualClientImp.MessagingFoodBox>() {} .getType();
-      ShieldingIndividualClientImp.MessagingFoodBox b1 = new Gson().fromJson(box1, listType);
       
+      // for registeredClient
+      ShieldingIndividualClientImp.MessagingFoodBox b1 = new Gson().fromJson(box1, listType);
+      ShieldingIndividualClientImp.MessagingFoodBox b2 = new Gson().fromJson(box1, listType);
       ShieldingIndividualClientImp.Order newOrder1 = new ShieldingIndividualClientImp.Order();
       newOrder1.status = 3;
       newOrder1.orderId = 1;
@@ -113,13 +121,25 @@ public class ShieldingIndividualClientImpTest {
       ShieldingIndividualClientImp.Order newOrder2 = new ShieldingIndividualClientImp.Order();
       newOrder2.status = 0;
       newOrder2.orderId = 2;
-      newOrder2.foodBox = b1;
-      newOrder2.placeTime = LocalDateTime.of(2021,4,20,17,45,39);
+      newOrder2.foodBox = b2;
+      newOrder2.placeTime = LocalDateTime.of(2021,4,20,17,45,39); //TODO: if testing after 2021-04-25, replace to a date in the same week of the testing day.
+      
       //registeredClient.setLatest(newOrder2);
       List<ShieldingIndividualClientImp.Order> orders = new ArrayList<ShieldingIndividualClientImp.Order>();
       orders.add(newOrder1);
       orders.add(newOrder2);
       registeredClient.setBoxOrders(orders);
+      
+      // for registeredCLient3
+      ShieldingIndividualClientImp.Order newOrder3 = new ShieldingIndividualClientImp.Order();
+      newOrder3.status = 3;
+      newOrder3.orderId = 1;
+      newOrder3.foodBox = b3;
+      newOrder3.placeTime = LocalDateTime.of(2021,4,12,17,45,39);
+      
+      List<ShieldingIndividualClientImp.Order> orders3 = new ArrayList<ShieldingIndividualClientImp.Order>();
+      orders3.add(newOrder3);
+      registeredClient3.setBoxOrders(orders3);
       
       //-------------Closest Company----------------
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + closestCateringCompanyRegistrationRequest);
@@ -170,32 +190,56 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(polloFoodBoxes,registeredClient.showFoodBoxes("pollotarian"),"Pollotarian preference gives food box 2" );
     
     //test invalid user
-    
+    assertFalse(newClient.showFoodBoxes(),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
   public void testPlaceOrder() {
-    // test unregistered user
     
-    // test registered user that has placed order
+    // test registered user that has placed order: If the latest one is within one week
+    String box1 = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
+                    "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}],\"delivered_by\":\"catering\"," +
+                    "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}";
+    Type listType = new TypeToken<ShieldingIndividualClientImp.MessagingFoodBox>() {} .getType();
+    ShieldingIndividualClientImp.MessagingFoodBox b1 = new Gson().fromJson(box1, listType);
+    registeredClient.setMarked(b1);
+    assertFalse(registeredClient.placeOrder()); // We have set this client to have an order on 2021-04-20, if you test after 2021-04-25, this should cause error
+                                                // You should set TODO in setup to a date within the week of your testing date.
+    // test registered user that has placed order: If the latest one is within one week
+    registeredClient3.setMarked(b1);
+    assertTrue(registeredClient3.placeOrder());
     
     // test registered user that hasn't picked food box
+    registeredClient.setMarked(null);
+    assertFalse(registeredClient.placeOrder());
     
     // test registered user that has picked food box and hasn't placed order
+    registeredClient2.setMarked(b1);
+    assertTrue(registeredClient2.placeOrder());
     
+    // test unregistered user
+    assertFalse(newClient.placeOrder(), "Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
   public void testEditOrder() {
+    // registered user 
+    
+    //
+    
     //
   
+    // test unregistered user
+    assertFalse(newClient.editOrder(),"Unregistered user shouldn't be able to use this method.");
   }
   
   
   @Test
   public void testCancelOrder() {
-    //
-  
+    
+    
+    // test unregistered user
+    assertFalse(newClient.editOrder(),"Unregistered user shouldn't be able to use this method.");
   }
   
   
@@ -206,7 +250,7 @@ public class ShieldingIndividualClientImpTest {
     //test registered user with valid order number
     
     //test unregistered user
-    assertFalse(newClient.requestOrderStatus(100),"Unregistered new shouldn't be able to use this method.");
+    assertFalse(newClient.requestOrderStatus(100),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
@@ -215,7 +259,7 @@ public class ShieldingIndividualClientImpTest {
     assertTrue(registeredClient.getCateringCompanies().size() >=0, "Number of catering companies should be bigger than 0");
     
     //test unregistered user
-    assertNull(newClient.getCateringCompanies(),"Unregistered new shouldn't be able to use this method.");
+    assertNull(newClient.getCateringCompanies(),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
@@ -256,7 +300,7 @@ public class ShieldingIndividualClientImpTest {
     assertEquals("vegan",registeredClient.getDietaryPreferenceForFoodBox(5),"Should return vegan");
     
     // test unregistered user
-    assertNull(newClient.getDietaryPreferenceForFoodBox(5),"Unregistered new shouldn't be able to use this method.");
+    assertNull(newClient.getDietaryPreferenceForFoodBox(5),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
@@ -269,7 +313,7 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(3, registeredClient.getItemsNumberForFoodBox(5),"Food box 5 should return 3 items.");
     
     // test unregistered user
-    assertEquals(-1, newClient.getItemsNumberForFoodBox(5),"Unregistered new shouldn't be able to use this method.");
+    assertEquals(-1, newClient.getItemsNumberForFoodBox(5),"Unregistered user shouldn't be able to use this method.");
   
   
   }
@@ -289,7 +333,7 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(foodBox5,registeredClient.getItemIdsForFoodBox(5),"Food box 5 should return id 9,11,12.");
   
     //test unregistered user
-    assertNull(newClient.getItemIdsForFoodBox(2),"Unregistered new shouldn't be able to use this method.");
+    assertNull(newClient.getItemIdsForFoodBox(2),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
@@ -302,7 +346,7 @@ public class ShieldingIndividualClientImpTest {
     assertEquals("mango",registeredClient.getItemNameForFoodBox(12,5),"Mango for item 12 and box 5");
   
     //test ujnregistered user
-    assertNull(newClient.getItemNameForFoodBox(1,6),"Unregistered new shouldn't be able to use this method.");
+    assertNull(newClient.getItemNameForFoodBox(1,6),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
@@ -315,13 +359,13 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(1,registeredClient.getItemQuantityForFoodBox(12,5),"Quantity is 1 for item 12 of box 5");
   
     //test unregistered user
-    assertEquals(-1,newClient.getItemQuantityForFoodBox(1,6),"Unregistered new shouldn't be able to use this method.");
+    assertEquals(-1,newClient.getItemQuantityForFoodBox(1,6),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
   public void testPickFoodBox() {
     //test registered user with invalid food box
-    assertFalse(registeredClient.pickFoodBox(10),"Invalid food box should be unsuccessful.");
+    assertFalse(registeredClient.pickFoodBox(registeredClient.getFoodBoxNumber()+1),"Invalid food box should be unsuccessful.");
     
     //test registered user with valid food box
     for (int i=1; i<=5; i++) {
@@ -330,10 +374,8 @@ public class ShieldingIndividualClientImpTest {
     
     //test unregistered user with valid food box
     for (int i=1; i<=5; i++){
-      assertFalse(newClient.pickFoodBox(i),"Unregistered new shouldn't be able to use this method.");
+      assertFalse(newClient.pickFoodBox(i),"Unregistered user shouldn't be able to use this method.");
     }
-    
-  
   }
   
   @Test
@@ -358,8 +400,9 @@ public class ShieldingIndividualClientImpTest {
       }
     }
     assertEquals(1,changedQ,"Should change to the reset quantity");
-    //invalid user
-    assertFalse(newClient.changeItemQuantityForPickedFoodBox(2,1),"Should register first");
+    
+    //test unregistered user
+    assertFalse(newClient.changeItemQuantityForPickedFoodBox(2,1),"Unregistered user shouldn't be able to use this method.");
   }
   
   //TODO: for following methods, try to tag them and add some orders in boxOrder list before each
@@ -370,8 +413,9 @@ public class ShieldingIndividualClientImpTest {
     // check if returned correctly
     Collection<Integer> ids = new ArrayList<Integer>(Arrays.asList(1,2));
     assertEquals(ids, registeredClient.getOrderNumbers(),"Incorrect number of orders");
-    // invalid user
-    assertNull(newClient.getOrderNumbers(),"New client shouldn't have ordered");
+    
+    //test unregistered user
+    assertNull(newClient.getOrderNumbers(),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
@@ -385,9 +429,10 @@ public class ShieldingIndividualClientImpTest {
     // check if returned correctly
     assertEquals("delivered", registeredClient.getStatusForOrder(1));
     assertEquals("placed", registeredClient.getStatusForOrder(2));
-    // invalid user
-    assertNull(newClient.getStatusForOrder(1),"New client shouldn't have ordered");
-    assertNull(newClient.getStatusForOrder(2),"New client shouldn't have ordered");
+    
+    //test unregistered user
+    assertNull(newClient.getStatusForOrder(1),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getStatusForOrder(2),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
@@ -402,9 +447,10 @@ public class ShieldingIndividualClientImpTest {
     Collection<Integer> ids = new ArrayList<Integer>(Arrays.asList(1,2,6));
     assertEquals(ids, registeredClient.getItemIdsForOrder(1));
     assertEquals(ids, registeredClient.getItemIdsForOrder(2));
-    // invalid user
-    assertNull(newClient.getItemIdsForOrder(1),"New client shouldn't have ordered");
-    assertNull(newClient.getItemIdsForOrder(2),"New client shouldn't have ordered");
+    
+    //test unregistered user
+    assertNull(newClient.getItemIdsForOrder(1),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getItemIdsForOrder(2),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
@@ -421,9 +467,10 @@ public class ShieldingIndividualClientImpTest {
     assertEquals("cucumbers", registeredClient.getItemNameForOrder(1,1),"Incorrect item");
     assertEquals("tomatoes", registeredClient.getItemNameForOrder(2,2),"Incorrect item");
     assertEquals("pork", registeredClient.getItemNameForOrder(6,1),"Incorrect item");
-    // invalid user
-    assertNull(newClient.getItemNameForOrder(1,1),"New client shouldn't have ordered");
-    assertNull(newClient.getItemNameForOrder(2,1),"New client shouldn't have ordered");
+    
+    //test unregistered user
+    assertNull(newClient.getItemNameForOrder(1,1),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getItemNameForOrder(2,1),"Unregistered user shouldn't be able to use this method.");
   }
   
   
@@ -441,9 +488,10 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(1, registeredClient.getItemQuantityForOrder(1,1),"Incorrect quantity");
     assertEquals(2, registeredClient.getItemQuantityForOrder(2,2),"Incorrect quantity");
     assertEquals(1, registeredClient.getItemQuantityForOrder(6,1),"Incorrect quantity");
-    // invalid user
-    assertEquals(-1,newClient.getItemQuantityForOrder(1,1),"New client shouldn't have ordered");
-    assertEquals(-1,newClient.getItemQuantityForOrder(2,1),"New client shouldn't have ordered");
+    
+    //test unregistered user
+    assertEquals(-1,newClient.getItemQuantityForOrder(1,1),"Unregistered user shouldn't be able to use this method.");
+    assertEquals(-1,newClient.getItemQuantityForOrder(2,1),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
@@ -476,7 +524,11 @@ public class ShieldingIndividualClientImpTest {
   
   @Test
   public void testGetClosestCateringCompany() {
+    //test registered user
     assertEquals(closestCateringCompanyName,closestCateringCompanyClient.getClosestCateringCompany(),"Closest Catering Company is incorrect.");
+    
+    // test unregistered user
+    assertNull(newClient.getClosestCateringCompany(),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test

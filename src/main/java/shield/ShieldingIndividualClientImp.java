@@ -13,6 +13,9 @@ import java.time.*;
 import java.util.*;
 
 public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
+  
+  final List<String> DIETARY_PREFERENCES = Arrays.asList("all","none","pollotarian","vegan");
+  
   /**
    * The string representation of the base server endpoint (a HTTP address)
    */
@@ -71,7 +74,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     this.shieldingIndividual = new ShieldingIndividual();
   }
 
-// ---------------- Endpoints Functions --------------------
+// ==================================== Server Endpoints Functions ====================================
   @Override
   public boolean registerShieldingIndividual(String CHI) {
     // check validation of inputs
@@ -141,51 +144,32 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   }
 
   @Override
+  /**
+   * Based on dietary preference, returns a collection of food ids
+   *
+   * @param "all","none","pollotarian" or "vegan"
+   * @return a collection of box id
+   */
   public Collection<String> showFoodBoxes(String dietaryPreference) {
     // check individual's validity to use methods
     if (!isRegistered()) return null;
     
     // check validation of inputs
     if (dietaryPreference == null) return null;
+    if (! (DIETARY_PREFERENCES.contains(dietaryPreference.toLowerCase()))) return null;
   
     // setup the response recepient
-    List<MessagingFoodBox> responseBoxes = new ArrayList<MessagingFoodBox>();
-  
+    List<MessagingFoodBox> responseBoxes = getFoodBoxes(dietaryPreference);
     List<String> boxIds = new ArrayList<String>();
     
-    // unexpected preference -> empty list
-    String[] preference = {"none", "pollotarian", "vegan"};
-    if (!Arrays.asList(preference).contains(dietaryPreference.toLowerCase())) return boxIds;
-    
-    // construct the endpoint request
-    String request = "/showFoodBox?orderOption=catering&dietaryPreference=" + dietaryPreference;
-    
-    try {
-      // perform request
-      String response = ClientIO.doGETRequest(endpoint + request);
-      assert response != null;
-      //System.out.println(response);
-      
-      // unmarshal response
-      Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
-      responseBoxes = new Gson().fromJson(response, listType);
-      
-      // gather required fields
+    if (responseBoxes != null){
       for (MessagingFoodBox b : responseBoxes) {
-        /*
-        for (Content c: b.contents) {
-          System.out.println(c.id + " " + c.name + " "+ c.quantity);
-        }
-        */
         boxIds.add(String.valueOf(b.id));
       }
       return boxIds;
-    } catch (Exception e) {
-      e.printStackTrace();
+    } else{
       return null;
     }
-    //System.out.println(boxOfPreference.size());
-    
   }
 
   // check whether t and now are in the same week
@@ -231,7 +215,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     System.out.println(data);
     
     
-//    TODO: no slash '/' here
     String x = shieldingIndividual.CHI;
     String z = cateringCompany.name;
     String w = cateringCompany.postCode;
@@ -304,9 +287,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     data = "{\"contents\":" + data + "}";
     //System.out.println(data);
     
-    String request = "/editOrder?order_id="+orderNumber;
-  
-    request = endpoint + request;
+    String request = endpoint + "/editOrder?order_id="+orderNumber;
   
     try {
       // perform request
@@ -482,7 +463,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
   }
 
-// ---------------- Clients Interfaces Functions --------------------
+// ==================================== Clients Interfaces Functions ====================================
+
+// ---------------------- Query for User from System ----------------------
   @Override
   public boolean isRegistered() {
     return shieldingIndividual.registered;
@@ -493,33 +476,18 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return shieldingIndividual.CHI;
   }
 
+//  ---------------------- Query for Food Box from Server ----------------------
   @Override
   public int getFoodBoxNumber() { // set all default boxes for user
     // check individual's validity to use methods
     if (!isRegistered()) return -1;
     
-    // construct the endpoint request
-    String request = "/showFoodBox?";
-  
-    // setup the response recepient
-    List<MessagingFoodBox> responseBoxes = new ArrayList<MessagingFoodBox>();
-  
-    try {
-      // perform request
-      String response = ClientIO.doGETRequest(endpoint + request);
-      assert response != null;
-      //System.out.println(response);
+    Collection<String> allBoxes = showFoodBoxes("all");
     
-      // unmarshal response
-      Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
-      responseBoxes = new Gson().fromJson(response, listType);
-      
-      //defaultBoxes = responseBoxes;
-    
-      return responseBoxes.size();
-    } catch (Exception e) {
-      e.printStackTrace();
-      return -1; // if haven't chosen the preference, return negative
+    if (allBoxes != null){
+      return allBoxes.size();
+    } else{
+      return -1;
     }
   }
 
@@ -529,237 +497,81 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (!isRegistered()) return null;
     
     //check validation of foodBoxId
-    int range = getFoodBoxNumber();
-    if (foodBoxId <= 0 || foodBoxId > range) return null;
+    if (!isValidFoodBoxId(foodBoxId)) return null;
     
-    // construct the endpoint request
-    String request = "/showFoodBox?";
-  
-    // setup the response recepient
-    List<MessagingFoodBox> responseBoxes = new ArrayList<MessagingFoodBox>();
-  
-    try {
-      // perform request
-      String response = ClientIO.doGETRequest(endpoint + request);
-      assert response != null;
-      //System.out.println(response);
+    //TODO: can be optimized later on
+    Collection<String> noneBoxes = showFoodBoxes("none");
+    if (noneBoxes.contains(String.valueOf(foodBoxId))) return "none";
+    Collection<String> veganBoxes = showFoodBoxes("vegan");
+    if (veganBoxes.contains(String.valueOf(foodBoxId))) return "vegan";
+    Collection<String> pollotarianBoxes = showFoodBoxes("pollotarian");
+    if (pollotarianBoxes.contains(String.valueOf(foodBoxId))) return "pollotarian";
     
-      // unmarshal response
-      Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
-      responseBoxes = new Gson().fromJson(response, listType);
-      
-      // gather required fields
-      for (MessagingFoodBox b : responseBoxes) {
-        if (b.id == foodBoxId) return b.diet;
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-      
-    }
+    // if none of the type contains the input food box id
     return null;
-    /*
-    Collection<String> none = showFoodBoxes("none");
-    for (String i: none) {
-      if (Integer.parseInt(i) == foodBoxId) return "none";
-    }
-    Collection<String> pollo = showFoodBoxes("pollotarian");
-    for (String i: pollo) {
-      if (Integer.parseInt(i) == foodBoxId) return "pollotarian";
-    }
-    Collection<String> vegan = showFoodBoxes("vegan");
-    for (String i: vegan) {
-      if (Integer.parseInt(i) == foodBoxId) return "vegan";
-    }
-    */
-    
   }
 
   @Override
-  public int getItemsNumberForFoodBox(int foodBoxId) {     //item diet:getDiretary(id)
-    // check individual's validity to use methods          //list of box = showfoodbox(diet)
-    if (!isRegistered()) return -1;                        //iterate list to get the box
-                                                           //get item num for food box
+  public int getItemsNumberForFoodBox(int foodBoxId) {
+    // check individual's validity to use methods
+    if (!isRegistered()) return -1;
+    
     //check validation of foodBoxId
-    int range = getFoodBoxNumber();
-    if (foodBoxId <= 0 || foodBoxId > range) return -1;
+    if (!isValidFoodBoxId(foodBoxId)) return -1;
   
-    // construct the endpoint request
-    String request = "/showFoodBox?";
-  
-    // setup the response recepient
-    List<MessagingFoodBox> responseBoxes = new ArrayList<MessagingFoodBox>();
-  
-    try {
-      // perform request
-      String response = ClientIO.doGETRequest(endpoint + request);
-      assert response != null;
-      //System.out.println(response);
-    
-      // unmarshal response
-      Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
-      responseBoxes = new Gson().fromJson(response, listType);
-    
-      // gather required fields
-      for (MessagingFoodBox b : responseBoxes) {
-        if (b.id == foodBoxId) return b.contents.size();
+    List<MessagingFoodBox> responseBoxes = getFoodBoxes("all");
+    for(MessagingFoodBox box : responseBoxes){
+      if(box.id == foodBoxId){
+        return box.contents.size();
       }
-    } catch (Exception e) {
-      e.printStackTrace();
     }
+    
+    // if no corresponding food box
     return -1;
-    
-    /*
-    String preference = getDietaryPreferenceForFoodBox(foodBoxId);
-    showFoodBoxes(preference); // also set boxOfPreference to the list of foodbox of this preference
-    assert boxOfPreference != null;
-    
-    MessagingFoodBox box = null;
-    //get index of this box in this id list
-    for (MessagingFoodBox b: boxOfPreference) {
-      if (b.id == foodBoxId) {
-        box = b;
-        break;
-      }
-    }
-    if (box == null) return -1; // if failed, return negative
-    return box.contents.size();
-    */
   }
 
   @Override
   public Collection<Integer> getItemIdsForFoodBox(int foodboxId) {
     // check individual's validity to use methods
     if (!isRegistered()) return null;
-    
     //check validation of foodBoxId
-    int range = getFoodBoxNumber();
-    if (foodboxId <= 0 || foodboxId > range) return null;
-    //System.out.println(7);
-    // construct the endpoint request
-    String request = "/showFoodBox?";
+    if (!isValidFoodBoxId(foodboxId)) return null;
   
-    // setup the response recepient
-    List<MessagingFoodBox> responseBoxes = new ArrayList<MessagingFoodBox>();
+    List<MessagingFoodBox> responseBoxes = getFoodBoxes("all");
     Collection<Integer> items = new ArrayList<Integer>();
-  
-    try {
-      // perform request
-      String response = ClientIO.doGETRequest(endpoint + request);
-      assert response != null;
-      //System.out.println(response);
-    
-      // unmarshal response
-      Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
-      responseBoxes = new Gson().fromJson(response, listType);
-    
-      MessagingFoodBox foodBox = null;
-      // gather required fields
-      for (MessagingFoodBox b : responseBoxes) {
-        if (b.id == foodboxId) {
-          foodBox = b;
-          break;
+    for(MessagingFoodBox box : responseBoxes){
+      if(box.id == foodboxId){
+        if (box == null) return null;
+        for (Content c: box.contents) {
+          items.add(c.id);
         }
+        return items;
       }
-      //System.out.println(8);
-      if (foodBox == null) return null;
-      //System.out.println(9);
-      
-      for (Content c: foodBox.contents) {
-        items.add(c.id);
-      }
-      return items;
-      
-    } catch (Exception e) {
-      e.printStackTrace();
-      System.out.println(10);
-      return null;
     }
     
-    
-    /*
-    String preference = getDietaryPreferenceForFoodBox(foodboxId);
-    showFoodBoxes(preference); // also set boxOfPreference to the list of foodbox of this preference
-    assert boxOfPreference != null;
-  
-    MessagingFoodBox box = null;
-    //get index of this box in this id list
-    for (MessagingFoodBox b: boxOfPreference) {
-      if (b.id == foodboxId) {
-        box = b;
-        break;
-      }
-    }
-    if (box == null) return null; // if no matching box, return null
-    Collection<Integer> items = new ArrayList<Integer>();
-    for (Content c: box.contents) {
-      items.add(c.id);
-    }
-    return items;
-     */
+    // if no corresponding food box
+    return null;
   }
 
   @Override
   public String getItemNameForFoodBox(int itemId, int foodBoxId) {
     // check individual's validity to use methods
     if (!isRegistered()) return null;
-    
     //check validation of foodBoxId
-    int range = getFoodBoxNumber();
-    if (foodBoxId <= 0 || foodBoxId > range) return null;
-    
-    // construct the endpoint request
-    String request = "/showFoodBox?";
+    if (!isValidFoodBoxId(foodBoxId)) return null;
   
-    // setup the response recepient
-    List<MessagingFoodBox> responseBoxes = new ArrayList<MessagingFoodBox>();
-  
-    try {
-      // perform request
-      String response = ClientIO.doGETRequest(endpoint + request);
-      assert response != null;
-      //System.out.println(response);
-    
-      // unmarshal response
-      Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
-      responseBoxes = new Gson().fromJson(response, listType);
-    
-      MessagingFoodBox foodBox = null;
-      // gather required fields
-      for (MessagingFoodBox b : responseBoxes) {
-        if (b.id == foodBoxId) {
-          foodBox = b;
-          break;
+    List<MessagingFoodBox> responseBoxes = getFoodBoxes("all");
+    //find the box first
+    for(MessagingFoodBox box : responseBoxes){
+      if(box.id == foodBoxId){
+        //then find the item
+        for (Content c: box.contents) {
+          if (c.id == itemId) return c.name;
         }
       }
-      if (foodBox == null) return null;
+    }
     
-      for (Content c: foodBox.contents) {
-        if (c.id == itemId) return c.name;
-      }
-      
-    } catch (Exception e) {
-      e.printStackTrace();
-      return null;
-    }
-    /*
-    String preference = getDietaryPreferenceForFoodBox(foodBoxId);
-    showFoodBoxes(preference); // also set boxOfPreference to the list of foodbox of this preference
-    assert boxOfPreference != null;
-  
-    MessagingFoodBox box = null;
-    //get index of this box in this id list
-    for (MessagingFoodBox b: boxOfPreference) {
-      if (b.id == foodBoxId) {
-        box = b;
-        break;
-      }
-    }
-    if (box == null) return null; // if no matching box, return null
-    
-    for (Content c: box.contents) {
-      if (c.id == itemId) return c.name;
-    }
-    */
+    // if no corresponding item in the identified food box
     return null;
   }
 
@@ -767,132 +579,58 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public int getItemQuantityForFoodBox(int itemId, int foodBoxId) {
     // check individual's validity to use methods
     if (!isRegistered()) return -1;
-    
     //check validation of foodBoxId
-    int range = getFoodBoxNumber();
-    if (foodBoxId <= 0 || foodBoxId > range) return -1;
+    if (!isValidFoodBoxId(foodBoxId)) return -1;
   
-    // construct the endpoint request
-    String request = "/showFoodBox?";
-  
-    // setup the response recepient
-    List<MessagingFoodBox> responseBoxes = new ArrayList<MessagingFoodBox>();
-  
-    try {
-      // perform request
-      String response = ClientIO.doGETRequest(endpoint + request);
-      assert response != null;
-      //System.out.println(response);
-    
-      // unmarshal response
-      Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
-      responseBoxes = new Gson().fromJson(response, listType);
-    
-      MessagingFoodBox foodBox = null;
-      // gather required fields
-      for (MessagingFoodBox b : responseBoxes) {
-        if (b.id == foodBoxId) {
-          foodBox = b;
-          break;
+    List<MessagingFoodBox> responseBoxes = getFoodBoxes("all");
+    //find the box first
+    for(MessagingFoodBox box : responseBoxes){
+      if(box.id == foodBoxId){
+        //then find the item
+        for (Content c: box.contents) {
+          if (c.id == itemId) return c.quantity;
         }
       }
-      if (foodBox == null) return -1;
+    }
     
-      for (Content c: foodBox.contents) {
-        if (c.id == itemId) return c.quantity;
-      }
-    
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    // if no corresponding item in the identified food box
     return -1;
-    /*
-    String preference = getDietaryPreferenceForFoodBox(foodBoxId);
-    showFoodBoxes(preference); // also set boxOfPreference to the list of foodbox of this preference
-    assert boxOfPreference != null;
-  
-    MessagingFoodBox box = null;
-    //get index of this box in this id list
-    for (MessagingFoodBox b: boxOfPreference) {
-      if (b.id == foodBoxId) {
-        box = b;
-        break;
-      }
-    }
-    if (box == null) return -1; // if no matching box, return negative
-  
-    for (Content c: box.contents) {
-      if (c.id == itemId) return c.quantity;
-    }
-    return -1;
-     */
-   
   }
-
+  
+  //  ---------------------- Pick Box Related ----------------------
+  /**
+   * Marks internal client food box in the marked food box field.
+   *
+   * @param  foodBoxId the food box id wanted by the user client
+   * @return true if valid food box id
+   */
   @Override
   public boolean pickFoodBox(int foodBoxId) {
     // check individual's validity to use methods
     if (!isRegistered()) return false;
-    
     //check validation of foodBoxId
-    int range = getFoodBoxNumber();
-    if (foodBoxId <= 0 || foodBoxId > range) {
+    if (!isValidFoodBoxId(foodBoxId)){
       marked = null; // check Piazza 693
       return false;
     }
   
-    // construct the endpoint request
-    String request = "/showFoodBox?";
+    List<MessagingFoodBox> responseBoxes = getFoodBoxes("all");
+    MessagingFoodBox fb = null;
   
-    // setup the response recepient
-    List<MessagingFoodBox> responseBoxes = new ArrayList<MessagingFoodBox>();
-  
-    try {
-      // perform request
-      String response = ClientIO.doGETRequest(endpoint + request);
-      assert response != null;
-      //System.out.println(response);
-      
-      // unmarshal response
-      Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
-      responseBoxes = new Gson().fromJson(response, listType);
-      
-      MessagingFoodBox fb = null;
-      // gather required fields
-      for (MessagingFoodBox b : responseBoxes) {
-        //System.out.println("box: " + b.id);
-        if (b.id == foodBoxId) {
-          fb = b;
-          break;
-        }
-      }
-//      TODO: this delete?
-      //if (fb == null) System.out.println("NULL");
-      marked = fb;
-      if (marked != null) return true;
-      
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return false;
-    /*
-    // if haven't set, then set the marked box
-    String preference = getDietaryPreferenceForFoodBox(foodBoxId);
-    showFoodBoxes(preference); // also set boxOfPreference to the list of foodbox of this preference
-    assert boxOfPreference != null;
-  
-    MessagingFoodBox box = null;
-    
-    for (MessagingFoodBox b: boxOfPreference) {
-      if (b.id == foodBoxId) {
-        box = b;
+    for(MessagingFoodBox box : responseBoxes){
+      if(box.id == foodBoxId){
+        fb = box;
         break;
       }
     }
-    if (box == null) return false; // if no matching box, return negative
-    marked = box;
-    return true;
-    */
+  
+    // always update marked box with this update
+    marked = fb;
+    if (marked != null){
+      return true;
+    }else{
+      return false;
+    }
   }
 
   @Override
@@ -918,6 +656,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return false; // revise
     
   }
+  
+  //  ---------------------- Query for Order From System ----------------------
 
   @Override
   public Collection<Integer> getOrderNumbers() {
@@ -1059,6 +799,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   }
   */
   
+  //  ---------------------- Order Modification ----------------------
   
   public boolean pickOrderToEdit(int orderNumber) {
     // precondition: isRegistered()
@@ -1141,6 +882,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   // **UPDATE2** REMOVED METHOD getDeliveryTimeForOrder
 
+//  ---------------------- Find Catering Company for User ----------------------
   // **UPDATE**
   @Override
   //assign the most closest cc when call this function each time
@@ -1190,11 +932,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     this.boxOrders = boxOrders;
   }
   
-  //public Order getLatest() {return this.latest;}
-  //public void setLatest(Order o) {
-    //this.latest = o;
-  //}
-  
   public Order getToBeEdited() { return this.toBeEdited; }
   public void setToBeEdited(Order o) { this.toBeEdited = o; }
   
@@ -1208,6 +945,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   
   public void setCateringCompany(String name){
     cateringCompany.name = name;
+  }
+  
+  public void setMarked(MessagingFoodBox b){
+    marked = b;
   }
   
   public void setStagedFoodBox(){
@@ -1229,6 +970,59 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       marked = fb;
     } catch (Exception e) {
       e.printStackTrace();
+    }
+  }
+  
+  //------------------------- private functions--------------------------
+  
+  /**
+   * Inner helper method to get boxes by dietary preference from the server
+   * Since it is private so no need to check validity of input
+   *
+   * @param dietaryPreference one of "all","none","vegan" or "pollotarian"
+   * @return a list of messaging food box by querying the server
+   */
+  private List<MessagingFoodBox> getFoodBoxes(String dietaryPreference){
+  
+    // setup the response recepient
+    List<MessagingFoodBox> responseBoxes = new ArrayList<MessagingFoodBox>();
+    List<String> boxIds = new ArrayList<String>();
+  
+    // construct the endpoint request
+    //if dietary preference is "all", append nothing to request
+    if (dietaryPreference.equals("all")) dietaryPreference = "";
+    String request = "/showFoodBox?orderOption=catering&dietaryPreference=" + dietaryPreference;
+  
+    try {
+      // perform request
+      String response = ClientIO.doGETRequest(endpoint + request);
+      assert response != null;
+    
+      // unmarshal response
+      Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
+      responseBoxes = new Gson().fromJson(response, listType);
+      
+      return responseBoxes;
+    } catch (Exception e) {
+      e.printStackTrace();
+      return null;
+    }
+  }
+  
+  /**
+   * Check if the given food box id is valid.
+   * Assume that the food box in the server is given continuous id,
+   * So there's a valid range for ids and we check if this id is within this range.
+   *
+   * @param foodBoxId id of a food box
+   * @return true if within the range
+   */
+  private boolean isValidFoodBoxId(int foodBoxId){
+    int range = getFoodBoxNumber();
+    if (foodBoxId <= 0 || foodBoxId > range){
+      return false;
+    } else{
+      return true;
     }
   }
 }
