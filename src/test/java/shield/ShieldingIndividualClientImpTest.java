@@ -35,6 +35,11 @@ public class ShieldingIndividualClientImpTest {
   private int registeredInvalidOrderNum;
   
   
+  private ShieldingIndividualClientImp closestCateringCompanyClient;
+  private String closestCateringCompanyName;
+  private String generalTestPostcode;
+  
+  
 //  private ShieldingIndividualClientImp placedOrderClient;
 //  private String placedOrderCHI;
   
@@ -66,30 +71,34 @@ public class ShieldingIndividualClientImpTest {
     registeredClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     registeredCHI = "0505150000";
     String userRegistrationRequest = "/registerShieldingIndividual?CHI="+registeredCHI;
-//    String registeredCateringCompanyName = "tempCateringCompanyForTestInShieldingClient";
-//    String registeredCCPostCode = "EH16_5AY";
-//    String cateringCompanyRegistrationRequest = "registerCateringCompany?business_name="+registeredCateringCompanyName+"&postcode="+registeredCCPostCode;
 //    registeredInvalidOrderNum = 10000;
 //    String placedOrderRequest = "/placeOrder?individual_id="+registeredCHI+"&catering_business_name="+registeredCateringCompanyName+"&catering_postcode="+registeredCCPostCode;
 
-    
   
     registeredClient2 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));  //add
     testCHI2 = "0505150110"; //add
     String userRegistration2Request = "/registerShieldingIndividual?CHI="+testCHI2; //add
+    
+    
+    // -------Closest Catering Company-------
+    generalTestPostcode = "EH16_5AY";
+    closestCateringCompanyName = "tempCateringCompanyForTestInShieldingClient";
+    String closestCateringCompanyRegistrationRequest = "registerCateringCompany?business_name="+closestCateringCompanyName+"&postcode="+generalTestPostcode;
+    closestCateringCompanyClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+    String closestCateringCompanyCHI = "0202020000";
+    String closestCateringCompanyClientRegistrationRequest = "/registerShieldingIndividual?CHI=" + closestCateringCompanyCHI;
+    
   
     try {
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegistrationRequest);
-
-//      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + cateringCompanyRegistrationRequest);
 //      registeredValidOrderNum = ClientIO.doGETRequest(clientProps.getProperty("endpoint") + placedOrderRequest);
-      registeredClient.setShieldingIndividual(registeredCHI);
+      registeredClient.setShieldingIndividual(registeredCHI,generalTestPostcode);
 //      registeredClient.setStagedFoodBox();
   
       //-------------setOrders----------------
       //registeredClient.setShieldingIndividual(testCHI);
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegistration2Request); //add
-      registeredClient2.setShieldingIndividual(testCHI2); //add
+      registeredClient2.setShieldingIndividual(testCHI2,generalTestPostcode); //add
       String box1 = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
                     "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}],\"delivered_by\":\"catering\"," +
                     "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}";
@@ -106,12 +115,16 @@ public class ShieldingIndividualClientImpTest {
       newOrder2.orderId = 2;
       newOrder2.foodBox = b1;
       newOrder2.placeTime = LocalDateTime.of(2021,4,20,17,45,39);
-      registeredClient.setLatest(newOrder2);
+      // registeredClient.setLatest(newOrder2);
       List<ShieldingIndividualClientImp.Order> orders = new ArrayList<ShieldingIndividualClientImp.Order>();
       orders.add(newOrder1);
       orders.add(newOrder2);
       registeredClient.setBoxOrders(orders);
-      //-------------setOrders----------------
+      
+      //-------------Closest Company----------------
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + closestCateringCompanyRegistrationRequest);
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + closestCateringCompanyClientRegistrationRequest);
+      closestCateringCompanyClient.setShieldingIndividual(closestCateringCompanyCHI,generalTestPostcode);
 
     } catch (IOException e) {
       e.printStackTrace();
@@ -461,8 +474,34 @@ public class ShieldingIndividualClientImpTest {
   
   @Test
   public void testGetClosestCateringCompany() {
+    assertEquals(closestCateringCompanyName,closestCateringCompanyClient.getClosestCateringCompany(),"Closest Catering Company is incorrect.")
   }
   
+  @Test
+  public void pickOrderToEdit() {
+    boolean success = registeredClient.pickOrderToEdit(2);
+    assert success;
+    ShieldingIndividualClientImp.Order o = registeredClient.getToBeEdited();
+    assertEquals(2,o.orderId);
+    assertEquals(0,o.status);
+    assertEquals(LocalDateTime.of(2021,4,20,17,45,39),o.placeTime);
   
+    String box1 = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
+            "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}],\"delivered_by\":\"catering\"," +
+            "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}";
+    Type listType = new TypeToken<ShieldingIndividualClientImp.MessagingFoodBox>() {} .getType();
+    ShieldingIndividualClientImp.MessagingFoodBox b1 = new Gson().fromJson(box1, listType);
+    assertEquals(o.foodBox.id, b1.id);
+    boolean check = registeredClient.setItemQuantityForOrder(2,2,1);
+    assert check;
+    int amount = -1;
+    Collection<ShieldingIndividualClientImp.Content> cts = registeredClient.getToBeEdited().foodBox.contents;
+    for (ShieldingIndividualClientImp.Content c: cts) {
+      if (c.id == 2) amount = c.quantity;
+    }
+    assertEquals(1,amount);
+    
+    assertEquals(2,registeredClient.getItemQuantityForOrder(2,2));
+  }
   
 }

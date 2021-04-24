@@ -74,6 +74,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     this.shieldingIndividual = new ShieldingIndividual();
   }
 
+// ---------------- Endpoints Functions --------------------
   @Override
   public boolean registerShieldingIndividual(String CHI) {
     // check validation of inputs
@@ -471,6 +472,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
   }
 
+// ---------------- Clients Interfaces Functions --------------------
   @Override
   public boolean isRegistered() {
     return shieldingIndividual.registered;
@@ -622,7 +624,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     //check validation of foodBoxId
     int range = getFoodBoxNumber();
     if (foodboxId <= 0 || foodboxId > range) return null;
-    System.out.println(7);
+    //System.out.println(7);
     // construct the endpoint request
     String request = "/showFoodBox?";
   
@@ -648,9 +650,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
           break;
         }
       }
-      System.out.println(8);
+      //System.out.println(8);
       if (foodBox == null) return null;
-      System.out.println(9);
+      //System.out.println(9);
       
       for (Content c: foodBox.contents) {
         items.add(c.id);
@@ -855,7 +857,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         }
       }
 //      TODO: this delete?
-      if (fb == null) System.out.println("NULL");
+      //if (fb == null) System.out.println("NULL");
       marked = fb;
       if (marked != null) return true;
       
@@ -1026,7 +1028,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     
     for (Order o: boxOrders) {
       if (o.orderId == orderNumber) {
-        toBeEdited = o; //TODO: need deep copy
+        Gson gson = new Gson();
+        String ct = gson.toJson(o);
+        
+        Type listType = new TypeToken<Order>() {} .getType();
+        toBeEdited = new Gson().fromJson(ct, listType);
+        
+        //toBeEdited = o; //TODO: need deep copy
         break;
       }
     }
@@ -1035,7 +1043,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   
   @Override
   //Todo: so have no previous knowledge about server at all
-  //Todo: if decrease quantity first
   
   //eliminate the pick step. if orderNum equal to orderNum of toBeEdit; then modify it
   //if not, then add some thing to toBeEdit
@@ -1080,6 +1087,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   // **UPDATE**
   @Override
+  //assign the most closest cc when call this function each time
   public String getClosestCateringCompany() {
     // check individual's validity to use methods
     if (!isRegistered()) return null;
@@ -1139,6 +1147,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     shieldingIndividual.registered = true;
     marked = new MessagingFoodBox();
     // add marked content id .....
+  }
+  
+  public void setCateringCompany(String name){
+    cateringCompany.name == name;
   }
   
   public void setStagedFoodBox(){
