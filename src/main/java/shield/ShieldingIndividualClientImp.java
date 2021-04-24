@@ -215,7 +215,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     System.out.println(data);
     
     
-//    TODO: no slash '/' here
     String x = shieldingIndividual.CHI;
     String z = cateringCompany.name;
     String w = cateringCompany.postCode;
@@ -288,9 +287,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     data = "{\"contents\":" + data + "}";
     //System.out.println(data);
     
-    String request = "/editOrder?order_id="+orderNumber;
-  
-    request = endpoint + request;
+    String request = endpoint + "/editOrder?order_id="+orderNumber;
   
     try {
       // perform request
@@ -468,7 +465,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
 // ==================================== Clients Interfaces Functions ====================================
 
-// ---------------------- Query for user info ----------------------
+// ---------------------- Query for User from System ----------------------
   @Override
   public boolean isRegistered() {
     return shieldingIndividual.registered;
@@ -479,7 +476,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return shieldingIndividual.CHI;
   }
 
-//  ---------------------- Query for food box info----------------------
+//  ---------------------- Query for Food Box from Server ----------------------
   @Override
   public int getFoodBoxNumber() { // set all default boxes for user
     // check individual's validity to use methods
@@ -600,6 +597,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return -1;
   }
   
+  //  ---------------------- Pick Box Related ----------------------
   /**
    * Marks internal client food box in the marked food box field.
    *
@@ -658,6 +656,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return false; // revise
     
   }
+  
+  //  ---------------------- Query for Order From System ----------------------
 
   @Override
   public Collection<Integer> getOrderNumbers() {
@@ -792,6 +792,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   }
   */
   
+  //  ---------------------- Order Modification ----------------------
   
   public boolean pickOrderToEdit(int orderNumber) {
     // precondition: isRegistered()
@@ -864,6 +865,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   // **UPDATE2** REMOVED METHOD getDeliveryTimeForOrder
 
+//  ---------------------- Find Catering Company for User ----------------------
   // **UPDATE**
   @Override
   //assign the most closest cc when call this function each time
@@ -913,11 +915,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     this.boxOrders = boxOrders;
   }
   
-  //public Order getLatest() {return this.latest;}
-  //public void setLatest(Order o) {
-    //this.latest = o;
-  //}
-  
   public Order getToBeEdited() { return this.toBeEdited; }
   public void setToBeEdited(Order o) { this.toBeEdited = o; }
   
@@ -931,6 +928,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   
   public void setCateringCompany(String name){
     cateringCompany.name = name;
+  }
+  
+  public void setMarked(MessagingFoodBox b){
+    marked = b;
   }
   
   public void setStagedFoodBox(){
