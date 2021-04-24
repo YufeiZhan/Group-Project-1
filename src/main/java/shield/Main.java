@@ -17,11 +17,11 @@ import java.util.List;
 
 public class Main {
   public static void main(String[] args) {
-
-    
+  
+  
     //之前register过的 重新new instance之后，就没办法retrieve info
     //所以isregisered 却没有办法通过server reset user的info
-    
+  
     ShieldingIndividualClientImp test = new ShieldingIndividualClientImp("http://0.0.0.0:5000/");
     test.registerShieldingIndividual("1212120160");
     assert test.isRegistered();
@@ -38,7 +38,7 @@ public class Main {
     boolean c = test.changeItemQuantityForPickedFoodBox(1,1);
     assert !s;
     assert !c;
-    
+  
     //----------------------------showFoodBoxes()-------------------------------
     //--------------------getDietaryPreferenceForFoodBox()----------------------
     String tp;
@@ -71,7 +71,7 @@ public class Main {
     assert num == 5;
   
     //--------------------------getItemsNumberForFoodBox()---------------------------
-    
+  
     int itemNum1 = test.getItemsNumberForFoodBox(1);
     assert itemNum1 == 3;
     int itemNum2 = test.getItemsNumberForFoodBox(2);
@@ -96,7 +96,7 @@ public class Main {
     assert itemIds4.size() == itemNum4;
     Collection<Integer> itemIds5 = test.getItemIdsForFoodBox(5);
     assert itemIds5.size() == itemNum5;
-    
+  
     System.out.println("box1:");
     for (Integer i: itemIds1) {
       System.out.println("id:" + i);
@@ -144,13 +144,13 @@ public class Main {
     test.pickFoodBox(5);
     assert test.getMarked().id == 5;
     //System.out.println("e5");
-    
+  
     //----------------changeItemQuantityForPickedFoodBox()-----------------------
     boolean addQ = test.changeItemQuantityForPickedFoodBox(9,3);
     assert !addQ;
     boolean minusQ = test.changeItemQuantityForPickedFoodBox(9,0);
     assert minusQ;
-    
+  
     Collection<ShieldingIndividualClientImp.Content> cs = test.getMarked().contents;
     int res = 1;
     for (ShieldingIndividualClientImp.Content ct: cs) {
@@ -161,7 +161,7 @@ public class Main {
     }
     System.out.println("e7");
     assert res == 0;
-    
+  
     System.out.println("ed1");
     boolean place = test.placeOrder();
     assert place;
@@ -171,7 +171,7 @@ public class Main {
     boolean place2 = test.placeOrder();  //within 7 days
     System.out.println("ed4");
     assert place2 == false;
-    
+  
     //--------------------Orders related need to set order list-----------------------
     ShieldingIndividualClientImp.Order orderPlaced = test.getLatest();
     int orderId = orderPlaced.orderId;
@@ -187,23 +187,25 @@ public class Main {
       System.out.println("order item quantity: " + test.getItemQuantityForOrder(i,orderId));
     }
     //--------------------getStatusForOrder()-----------------------
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
     //for(String e: l){
-      //System.out.println(e);
+    //System.out.println(e);
     //}
     //System.out.println("e");
     //String a = "EH1_9RG";
     //System.out.println(a.matches("EH([1-9]|(1[0-7]))_[1-9][A-Z][A-Z]"));
     //test.registerShieldingIndividual("1212120103");
-    
+
 //  DummyShieldingIndividualClientImp individual =  new DummyShieldingIndividualClientImp("http://0.0.0.0:5000/");
 //  Collection<String> boxes = individual.showFoodBoxes("vegan");
 //  System.out.println(boxes);
-    
+  
+  
+  
     return;
 
 //    SupermarketClientImp supermarket = new SupermarketClientImp();
