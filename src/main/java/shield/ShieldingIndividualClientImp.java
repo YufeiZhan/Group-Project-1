@@ -612,7 +612,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     Collection<Integer> itemIds = getItemIdsForFoodBox(boxId);
     //check if given item is within the picked box
     if (!itemIds.contains(itemId)) return false;
-    //check validity of the specified quantity
+    //check valmidity of the specified quantity
     int q = getItemQuantityForFoodBox(itemId,boxId);
     if (q < quantity || quantity < 0) return false;
     
