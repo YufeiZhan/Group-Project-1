@@ -138,6 +138,8 @@ public class SupermarketClientImp implements SupermarketClient {
   
   
   // ------------------------------------ Public Testing Helper Methods ------------------------------------
+  public List<SupermarketOrder> getOrderList() {return orderList;}
+  
   public void setSupermarket(String name, String postcode){
     supermarket.name = name;
     supermarket.postCode = postcode;

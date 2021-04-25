@@ -722,19 +722,19 @@ public class ShieldingIndividualClientImpTest {
   @Test
   public void testPickOrderToEdit() {
     // registered user with no order history / registered user didn't use own order id
-    assertFalse(registeredClient.pickOrderToEdit(orderId2));
+    assertFalse(registeredClient.pickOrderToEdit(orderId2),"Haven't ordered yet");
     // registered user with order history that could be edited; but pick non existing order
-    assertFalse(registeredClient2.pickOrderToEdit(invalidOrderId));
+    assertFalse(registeredClient2.pickOrderToEdit(invalidOrderId),"Invalid order number");
     // registered user with order history that could be edited; successfully edit
-    assertTrue(registeredClient2.pickOrderToEdit(orderId2));
-    assertNotNull(registeredClient2.getToBeEdited());
+    assertTrue(registeredClient2.pickOrderToEdit(orderId2),"Fail success scenario");
+    assertNotNull(registeredClient2.getToBeEdited(), "Fail to stage required order");
     Gson gson = new Gson();
     String staging = gson.toJson(registeredClient2.getToBeEdited());
     String local = gson.toJson(registeredClient2.getBoxOrders().get(1));
-    assertEquals(staging, local);
-    assertNotEquals(registeredClient2.getToBeEdited(), registeredClient2.getBoxOrders().get(1));
+    assertEquals(staging, local,"toBeEdited should have same content with the specified order");
+    assertNotEquals(registeredClient2.getToBeEdited(), registeredClient2.getBoxOrders().get(1), "toBeEdit should be a copy not same reference");
     // registered user with order history that could not be edited
-    assertFalse(registeredClient3.pickOrderToEdit(orderId3));
+    assertFalse(registeredClient3.pickOrderToEdit(orderId3), "No order could be edited");
     // test unregistered user
     assertFalse(newClient.pickOrderToEdit(orderId2),"Unregistered user shouldn't be able to use this method.");
     
