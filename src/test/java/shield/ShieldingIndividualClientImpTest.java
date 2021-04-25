@@ -283,7 +283,7 @@ public class ShieldingIndividualClientImpTest {
     // prepare order
     String boxEdited = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":0},{\"id\":2,\"name\":\"tomatoes\"," +
             "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}],\"delivered_by\":\"catering\"," +
-            "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}";
+            "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}"; // change cucumber quantity from 1 to 0
     Type listType = new TypeToken<ShieldingIndividualClientImp.MessagingFoodBox>() {} .getType();
     ShieldingIndividualClientImp.MessagingFoodBox b1 = new Gson().fromJson(boxEdited, listType);
     ShieldingIndividualClientImp.Order order = new ShieldingIndividualClientImp.Order();
@@ -306,11 +306,14 @@ public class ShieldingIndividualClientImpTest {
     order.orderId = orderId2;
     registeredClient2.setToBeEdited(order);
     assertTrue(registeredClient2.editOrder(orderId2));
+    ShieldingIndividualClientImp.MessagingFoodBox localContent = registeredClient2.getBoxOrders().get(1).foodBox;
+    assertTrue(localContent.contents.get(0).quantity == 0);
     // registered user with order history that could not be edited
     order.orderId = orderId3;
     order.status = 3;
     registeredClient3.setToBeEdited(order);
     assertFalse(registeredClient3.editOrder(orderId3));
+    assertNull(registeredClient2.getToBeEdited());
     // test unregistered user
     assertFalse(newClient.editOrder(orderId2),"Unregistered user shouldn't be able to use this method.");
   }
@@ -493,7 +496,7 @@ public class ShieldingIndividualClientImpTest {
     // no order history
     assertEquals(0,registeredClient.getOrderNumbers().size(),"No order history");
     // check if returned correctly
-    Collection<Integer> ids = new ArrayList<Integer>(Arrays.asList(1,2));
+    Collection<Integer> ids = new ArrayList<Integer>(Arrays.asList(orderId1,orderId2));
     assertEquals(ids, registeredClient2.getOrderNumbers(),"Incorrect number of orders");
     
     //test unregistered user
@@ -503,77 +506,75 @@ public class ShieldingIndividualClientImpTest {
   @Test
   public void testGetStatusForOrder() { // query sever
     // no order history
-    assertNull(registeredClient.getStatusForOrder(1),"Haven't ordered yet");
-    assertNull(registeredClient.getStatusForOrder(2),"Haven't ordered yet");
+    assertNull(registeredClient.getStatusForOrder(orderId1),"Haven't ordered yet");
+    assertNull(registeredClient.getStatusForOrder(orderId2),"Haven't ordered yet");
     // un-found order number
-    assertNull(registeredClient2.getStatusForOrder(3),"No such order");
-    assertNull(registeredClient2.getStatusForOrder(4),"No such order");
+    assertNull(registeredClient2.getStatusForOrder(invalidOrderId),"No such order");
     // check if returned correctly
-    assertEquals("delivered", registeredClient2.getStatusForOrder(1));
-    assertEquals("placed", registeredClient2.getStatusForOrder(2));
+    assertEquals("delivered", registeredClient2.getStatusForOrder(orderId1));
+    assertEquals("placed", registeredClient2.getStatusForOrder(orderId2));
     
     //test unregistered user
-    assertNull(newClient.getStatusForOrder(1),"Unregistered user shouldn't be able to use this method.");
-    assertNull(newClient.getStatusForOrder(2),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getStatusForOrder(orderId1),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getStatusForOrder(orderId2),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
   public void testGetItemIdsForOrder() {
     // no order history
-    assertNull(registeredClient.getItemIdsForOrder(1),"Haven't ordered yet");
-    assertNull(registeredClient.getItemIdsForOrder(2),"Haven't ordered yet");
+    assertNull(registeredClient.getItemIdsForOrder(orderId1),"Haven't ordered yet");
+    assertNull(registeredClient.getItemIdsForOrder(orderId2),"Haven't ordered yet");
     // un-found order number
-    assertNull(registeredClient2.getItemIdsForOrder(3),"No such order");
-    assertNull(registeredClient2.getItemIdsForOrder(4),"No such order");
+    assertNull(registeredClient2.getItemIdsForOrder(invalidOrderId),"No such order");
     // check if returned correctly
     Collection<Integer> ids = new ArrayList<Integer>(Arrays.asList(1,2,6));
-    assertEquals(ids, registeredClient2.getItemIdsForOrder(1));
-    assertEquals(ids, registeredClient2.getItemIdsForOrder(2));
+    assertEquals(ids, registeredClient2.getItemIdsForOrder(orderId1));
+    assertEquals(ids, registeredClient2.getItemIdsForOrder(orderId2));
     
     //test unregistered user
-    assertNull(newClient.getItemIdsForOrder(1),"Unregistered user shouldn't be able to use this method.");
-    assertNull(newClient.getItemIdsForOrder(2),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getItemIdsForOrder(orderId1),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getItemIdsForOrder(orderId2),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
   public void testGetItemNameForOrder() {
     // no order history
-    assertNull(registeredClient.getItemNameForOrder(1,1),"Haven't ordered yet");
-    assertNull(registeredClient.getItemNameForOrder(2,1),"Haven't ordered yet");
+    assertNull(registeredClient.getItemNameForOrder(1,orderId1),"Haven't ordered yet");
+    assertNull(registeredClient.getItemNameForOrder(2,orderId1),"Haven't ordered yet");
     // un-found order number
-    assertNull(registeredClient2.getItemNameForOrder(1,3),"No such order");
+    assertNull(registeredClient2.getItemNameForOrder(1,invalidOrderId),"No such order");
     // un-found order item
-    assertNull(registeredClient2.getItemNameForOrder(4,1),"No such item");
-    assertNull(registeredClient2.getItemNameForOrder(7,2),"No such item");
+    assertNull(registeredClient2.getItemNameForOrder(4,orderId1),"No such item");
+    assertNull(registeredClient2.getItemNameForOrder(7,orderId2),"No such item");
     // success scenario
-    assertEquals("cucumbers", registeredClient2.getItemNameForOrder(1,1),"Incorrect item");
-    assertEquals("tomatoes", registeredClient2.getItemNameForOrder(2,2),"Incorrect item");
-    assertEquals("pork", registeredClient2.getItemNameForOrder(6,1),"Incorrect item");
+    assertEquals("cucumbers", registeredClient2.getItemNameForOrder(1,orderId1),"Incorrect item");
+    assertEquals("tomatoes", registeredClient2.getItemNameForOrder(2,orderId2),"Incorrect item");
+    assertEquals("pork", registeredClient2.getItemNameForOrder(6,orderId1),"Incorrect item");
     
     //test unregistered user
-    assertNull(newClient.getItemNameForOrder(1,1),"Unregistered user shouldn't be able to use this method.");
-    assertNull(newClient.getItemNameForOrder(2,1),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getItemNameForOrder(1,orderId1),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getItemNameForOrder(2,orderId1),"Unregistered user shouldn't be able to use this method.");
   }
   
   
   @Test
   public void testGetItemQuantityForOrder() {
     // no order history
-    assertEquals(-1,registeredClient.getItemQuantityForOrder(1,1),"Haven't ordered yet");
-    assertEquals(-1,registeredClient.getItemQuantityForOrder(2,1),"Haven't ordered yet");
+    assertEquals(-1,registeredClient.getItemQuantityForOrder(1,orderId1),"Haven't ordered yet");
+    assertEquals(-1,registeredClient.getItemQuantityForOrder(2,orderId1),"Haven't ordered yet");
     // un-found order number
-    assertEquals(-1,registeredClient2.getItemQuantityForOrder(1,3),"No such order");
+    assertEquals(-1,registeredClient2.getItemQuantityForOrder(1,invalidOrderId),"No such order");
     // un-found order item
-    assertEquals(-1,registeredClient2.getItemQuantityForOrder(4,1),"No such item");
-    assertEquals(-1,registeredClient2.getItemQuantityForOrder(7,2),"No such item");
+    assertEquals(-1,registeredClient2.getItemQuantityForOrder(4,orderId1),"No such item");
+    assertEquals(-1,registeredClient2.getItemQuantityForOrder(7,orderId2),"No such item");
     // success scenario
-    assertEquals(1, registeredClient2.getItemQuantityForOrder(1,1),"Incorrect quantity");
-    assertEquals(2, registeredClient2.getItemQuantityForOrder(2,2),"Incorrect quantity");
-    assertEquals(1, registeredClient2.getItemQuantityForOrder(6,1),"Incorrect quantity");
+    assertEquals(1, registeredClient2.getItemQuantityForOrder(1,orderId1),"Incorrect quantity");
+    assertEquals(2, registeredClient2.getItemQuantityForOrder(2,orderId2),"Incorrect quantity");
+    assertEquals(1, registeredClient2.getItemQuantityForOrder(6,orderId1),"Incorrect quantity");
     
     //test unregistered user
-    assertEquals(-1,newClient.getItemQuantityForOrder(1,1),"Unregistered user shouldn't be able to use this method.");
-    assertEquals(-1,newClient.getItemQuantityForOrder(2,1),"Unregistered user shouldn't be able to use this method.");
+    assertEquals(-1,newClient.getItemQuantityForOrder(1,orderId1),"Unregistered user shouldn't be able to use this method.");
+    assertEquals(-1,newClient.getItemQuantityForOrder(2,orderId1),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
@@ -614,6 +615,24 @@ public class ShieldingIndividualClientImpTest {
   
   @Test
   public void pickOrderToEdit() {
+    // registered user with no order history / registered user didn't use own order id
+    assertFalse(registeredClient.pickOrderToEdit(orderId2));
+    // registered user with order history that could be edited; but pick non existing order
+    assertFalse(registeredClient2.pickOrderToEdit(invalidOrderId));
+    // registered user with order history that could be edited; successfully edit
+    assertTrue(registeredClient2.pickOrderToEdit(orderId2));
+    assertNotNull(registeredClient2.getToBeEdited());
+    Gson gson = new Gson();
+    String staging = gson.toJson(registeredClient2.getToBeEdited());
+    String local = gson.toJson(registeredClient2.getBoxOrders().get(1));
+    assertEquals(staging, local);
+    assertNotEquals(registeredClient2.getToBeEdited(), registeredClient2.getBoxOrders().get(1));
+    // registered user with order history that could not be edited
+    assertFalse(registeredClient3.pickOrderToEdit(orderId3));
+    // test unregistered user
+    assertFalse(newClient.pickOrderToEdit(orderId2),"Unregistered user shouldn't be able to use this method.");
+    
+    /*
     boolean success = registeredClient2.pickOrderToEdit(2);
     assert success;
     ShieldingIndividualClientImp.Order o = registeredClient2.getToBeEdited();
@@ -637,6 +656,8 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(1,amount);
     
     assertEquals(2,registeredClient2.getItemQuantityForOrder(2,2));
+    
+     */
   }
   
 }
