@@ -99,7 +99,7 @@ public class SystemTests {
     // valid supermarket
     newSupermarketRegistrationClient = new SupermarketClientImp(clientProps.getProperty("endpoint"));
     newSupermarketName = "newSupermarktgRegistrationClientNameForSystemTest";
-    newSupermarketPostCode = "EH13_5AY";
+    newSupermarketPostCode = "EH13_5AZ"; //TODO: every time after first time, change to un-used valid post code or clear supermarkets.txt
     
     
     // ---- Register Catering Company ----
@@ -108,23 +108,24 @@ public class SystemTests {
     invalidCateringCompanyPostCode = "EH_5AY";
     validCateringRegistrationClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
     validCateringCompanyName = "validCateringRegistrationClientNameForSystemTest";
-    validCateringCompanyPostCode = "EH16_5AY";
+    validCateringCompanyPostCode = "EH16_5AZ"; //TODO: every timen after first time, change to un-used valid post code or clear providers.txt
+                                               //TODO: remember to remove the first empty line in providers.txt
     
 
     // ---- Register Shielding Individual ----
     invalidShieldingIndividualRegistrationClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     invalidShieldingIndividualCHI = "03080912f3234";
     validShieldingIndividualRegistrationClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
-    validShieldingIndividualCHI = "0308091234";
+    validShieldingIndividualCHI = "0308091236"; //TODO: every time after first time, change to un-used CHI or clear shielding_individual.txt
     
     
     // ---- Cancel Order ----
     cancelOrderShieldingIndividualClient1 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     cancelOrderShieldingIndividualClient2 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     cancelOrderShieldingIndividualClient3 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
-    cancelOrderShieldingIndividualCHI1 = "1010100000";
-    cancelOrderShieldingIndividualCHI2 = "1111110000";
-    cancelOrderShieldingIndividualCHI3 = "1212120000";
+    cancelOrderShieldingIndividualCHI1 = "1010100002"; //TODO: every time after first time, change to un-used CHI or clear shielding_individual.txt
+    cancelOrderShieldingIndividualCHI2 = "1111110002"; //TODO: every time after first time, change to un-used CHI or clear shielding_individual.txt
+    cancelOrderShieldingIndividualCHI3 = "1212120002"; //TODO: every time after first time, change to un-used CHI or clear shielding_individual.txt
     cancelOrderShieldingIndividualPostcode1 = "EH1_1AA";
     cancelOrderShieldingIndividualPostcode2 = "EH1_1AB";
     cancelOrderShieldingIndividualPostcode3 = "EH1_1AC";
@@ -134,7 +135,7 @@ public class SystemTests {
   
     // ---- Request Order Status ----
     requestOrderStatusShieldingIndividualClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));;
-    requestOrderStatusShieldingIndividualCHI = "0909090000";
+    requestOrderStatusShieldingIndividualCHI = "0909090002"; //TODO: every time after first time, change to un-used CHI or clear shielding_individual.txt
     requestOrderStatusShieldingIndividualPostcode = "EH1_1AD";
     requestOrderStatusClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
     requestOrderCateringName = "requestOrderCateringCompanyNameForSystemTest";
@@ -142,7 +143,7 @@ public class SystemTests {
   
     // ---- Update Order Status ----
     updateOrderStatusShieldingIndividualClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));;
-    updateOrderStatusShieldingIndividualCHI = "0102030000";
+    updateOrderStatusShieldingIndividualCHI = "0102030002"; //TODO: every time after first time, change to un-used CHI or clear shielding_individual.txt
     updateOrderStatusShieldingIndividualPostcode = "EH1_1AE";
     updateOrderStatusClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
     updateOrderCateringName = "updateOrderCateringCompanyNameForSystemTest";
@@ -219,7 +220,7 @@ public class SystemTests {
     //====== Main: registered user place an order of a none preference box without amending
     // Pre stage: registration
     ShieldingIndividualClientImp placeOrderClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
-    String placeOrderClientCHI = "0707071219"; //TODO: when run after first time, change to un-used CHI or clear shielding_individual.txt
+    String placeOrderClientCHI = "0707071221"; //TODO: every time after first time, change to un-used CHI or clear shielding_individual.txt
     String placeOrderClientPreference = "none";
     boolean registerSuccess = placeOrderClient.registerShieldingIndividual(placeOrderClientCHI);
     assertTrue(registerSuccess, "Fail to register new shielding individual client");
@@ -274,7 +275,7 @@ public class SystemTests {
     assertFalse(placeOrderClient2.placeOrder(),"Unregistered user could not place order");
     
     // Alternative 3: registered user hasn't pick food box could not place order
-    String placeOrderClientCHI2 = "0101114567"; //TODO: when run after first time, change to un-used CHI or clear shielding_individual.txt
+    String placeOrderClientCHI2 = "0101114569"; //TODO: every time after first time, change to un-used CHI or clear shielding_individual.txt
     assertTrue(placeOrderClient2.registerShieldingIndividual(placeOrderClientCHI2), "Fail to register");
     assertFalse(placeOrderClient2.placeOrder(), "Shouldn't place order without picking any box first");
   }
@@ -284,7 +285,7 @@ public class SystemTests {
   public void testEditOrderUseCase() {
     // new register user place only one order;
     ShieldingIndividualClientImp editOrderClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
-    String editOrderClientCHI = "0101011239"; //TODO: when run after first time, change to un-used CHI or clear shielding_individual.txt
+    String editOrderClientCHI = "0101011241"; //TODO: every time after first time, change to un-used CHI or clear shielding_individual.txt
     assertTrue(editOrderClient.registerShieldingIndividual(editOrderClientCHI), "Fail to register");
     assertTrue(editOrderClient.pickFoodBox(1), "Fail to pick food box");
     assertTrue(editOrderClient.placeOrder(),"Fail to place order");
