@@ -287,7 +287,7 @@ public class ShieldingIndividualClientImpTest {
     //test new client registration
     assertFalse(newClient.isRegistered());
     assertTrue(newClient.registerShieldingIndividual(newCHI));
-    newClient.setShieldingIndividual(newCHI,generalTestPostcode); // TODO: comment out this line if use unregistered newCHI to test each time
+    newClient.setShieldingIndividual(newCHI,generalTestPostcode);
     assertTrue(newClient.isRegistered());
     assertEquals(newCHI,newClient.getCHI(),"Newly registered user should have identical CHI");
 
