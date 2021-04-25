@@ -133,9 +133,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       // perform request
       String response = ClientIO.doGETRequest(endpoint + request);
       assert response != null;
-      System.out.println(response.equals("already registered"));
+      
       if (response.equals("already registered")) return true;
-//      System.out.println(4);
+
       // unmarshal response
       Type listType = new TypeToken<Collection<String>>() {}.getType();
       responseDetail = new Gson().fromJson(response, listType);
@@ -151,7 +151,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
       //set cateringCompany
       getClosestCateringCompany();
-      System.out.println("User register checked cc assign: " + cateringCompany.name);
 
       //set order list
       boxOrders = new ArrayList<Order>();
@@ -223,7 +222,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     String request = "/placeOrder?individual_id="+ x +
                      "&catering_business_name=" + z +
                      "&catering_postcode=" + w;
-    System.out.println("placeOrder request checked: " + x +" "+ z + " " +w);
     request = endpoint + request;
   
     try {
@@ -737,9 +735,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (!isRegistered()) return false;
 
     //check validation of inputs
-    if (boxOrders == null) return false; //what if used in place order
-                                         // and the order is the first order ever that this individual have placed.
-                                         // that is, boxOrders is indeed null;
+    if (boxOrders == null) return false;
+    
     if (toBeEdited == null || toBeEdited.orderId != orderNumber) {
       boolean success = pickOrderToEdit(orderNumber);
       if (!success) return false;
@@ -757,6 +754,18 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return false;
   }
   
+  
+  /**
+   * Staging an order for editing
+   * Note: the staging order should be a deep copy of
+   * the original one in the local order history;
+   * in case fail to update order info in server,
+   * then the original order info is still kept
+   * in order history (sync to server)
+   *
+   * @param orderNumber orderId of the order to be edited
+   * @return true if t is in the current week
+   */
   protected boolean pickOrderToEdit(int orderNumber) {
     // precondition: isRegistered()
     if (!isRegistered()) return false;
@@ -800,13 +809,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     List<String> info = Arrays.asList(caters.get(0).split(","));
     String pc = info.get(2);
     float d = getDistance(shieldingIndividual.postCode,pc);
-    //System.out.println("d");
     
     for (String c: caters.subList(1,caters.size())) { //search from the second cater in the list
       List<String> moreInfo = Arrays.asList(c.split(","));
       String morePC = moreInfo.get(2);
       float dis = getDistance(shieldingIndividual.postCode, morePC);
-      //System.out.println(dis);
       if (0 <= dis && dis <= d) {
         d = dis;
         info = moreInfo;
@@ -950,7 +957,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
   }
   
-  // check whether t and now are in the same week
+  
+  /**
+   * Check whether the give date t is in the current week
+   *
+   * @param t any plausible date
+   * @return true if t is in the current week
+   */
   private boolean isInSameWeek(LocalDateTime t) {
     Calendar cal1 = Calendar.getInstance();
     int currentYear = cal1.getWeekYear();
