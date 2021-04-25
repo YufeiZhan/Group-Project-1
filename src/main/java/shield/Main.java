@@ -22,9 +22,34 @@ public class Main {
     ShieldingIndividualClientImp test = new ShieldingIndividualClientImp("http://0.0.0.0:5000/");
    // test.registerShieldingIndividual("1212120163");
    // assert test.isRegistered();
-   LocalDateTime t = LocalDateTime.of(2020,12,31,12,1,0);
-   assert test.isInSameWeek(t);
+    //LocalDateTime t = LocalDateTime.of(2021,4,12,12,1,0);
+   //if (test.isInSameWeek(t)) System.out.println(true);
     
+    //System.out.println(test.isInSameWeek(t));
+    /*
+    try {
+      String content1 = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
+              "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}]}";
+      String x = "0504130000";
+      String z = "tempCateringCompanyForTestInShieldingClient";
+      String w = "EH16_5AY";
+      String o2 = "/placeOrder?individual_id="+ x +
+              "&catering_business_name=" + z +
+              "&catering_postcode=" + w;
+      //-------------update server for order 1----------------
+      String response1 = ClientIO.doPOSTRequest("http://0.0.0.0:5000/"+o2, content1);
+      int orderId = Integer.parseInt(response1); //TODO: save orderId as attributes of this class for future reference
+      
+      String status1 = "/updateOrderStatus?order_id="+orderId+"&newStatus=dispatched";
+      String statusRes1 = ClientIO.doGETRequest("http://0.0.0.0:5000/" + status1);
+      assert statusRes1.equals("True");
+      String suc = ClientIO.doGETRequest("http://0.0.0.0:5000/" +"/cancelOrder?order_id="+orderId);
+      System.out.println(suc);
+    } catch (Exception e) {
+      System.out.println("error");
+    }
+    */
+     */
     /*
     boolean success = test.pickFoodBox(2);
     System.out.println(success);
