@@ -4,11 +4,8 @@
 
 package shield;
 
+import com.google.gson.Gson;
 import org.junit.jupiter.api.*;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -18,6 +15,8 @@ import java.io.InputStream;
 
 import java.util.Random;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
  *
  */
@@ -26,11 +25,16 @@ public class CateringCompanyClientImpTest {
   private final static String clientPropsFilename = "client.cfg";
 
   private Properties clientProps;
+  
   private CateringCompanyClientImp newClient;
+  
   private CateringCompanyClientImp registeredClient;
   private String registeredName;
   private String registeredPostCode;
+  
+  //Order Update
   private CateringCompanyClientImp orderedClient;
+  private int orderNumber;
 
 
 
@@ -54,21 +58,35 @@ public class CateringCompanyClientImpTest {
     clientProps = loadProperties(clientPropsFilename);
     newClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
     
+    //registration client
     registeredClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
     registeredName = "tempCateringCompany";
     registeredPostCode = "EH17_9ZZ";
     String registrationRequest = "/registerCateringCompany?business_name="+registeredName+"&postcode="+registeredPostCode;
     
-//    orderedClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
-//    String orderedName = "tempCateringCompany2";
-//    String orderedPostCode = "EH1_1AA";
-//    String registrationRequest2 = "/registerCateringCompany?business_name="+orderedName+"&postcode="+orderedPostCode;
-//    String orderRequest = 'updateOrderStatus?order_id=42&newStatus=packed'
+    orderedClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
+    String orderedCHI = "0909990000";
+    String userRegistrationRequest =  "/registerShieldingIndividual?CHI=" + orderedCHI;
+    String orderedName = "tempCateringCompanyForCCClientOrderUpdate";
+    String orderedPostCode = "EH1_1AA";
+    String registrationRequest2 = "/registerCateringCompany?business_name="+orderedName+"&postcode="+orderedPostCode;
+    String placeOrderData = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
+            "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}],\"delivered_by\":\"catering\"," +
+            "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}";
+    String placeOrderRequest = clientProps.getProperty("endpoint") + "/placeOrder?individual_id="+ orderedCHI +
+            "&catering_business_name=" + orderedName + "&catering_postcode=" + orderedPostCode;
     
   
     try {
+      // ---- Catering Company Registration ----
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + registrationRequest);
       registeredClient.setCateringCompany(registeredName,registeredPostCode);
+  
+      // ---- Catering Company Order Update ----
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegistrationRequest);
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + registrationRequest2);
+      orderNumber = Integer.parseInt(ClientIO.doPOSTRequest(placeOrderRequest,placeOrderData));
+      
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -79,13 +97,11 @@ public class CateringCompanyClientImpTest {
   @DisplayName("Testing input for new catering company registration")
   public void testCateringCompanyNewRegistration() {
     String name = generateValidRandomName();
-
-//    //testing invalid parameters
-//    assertFalse(newClient.registerCateringCompany(null,postCode),
-//            "Catering Company shouldn't been registered with name field being null");
-//    assertFalse(newClient.registerCateringCompany(name,null),
-//            "Catering Company shouldn't been registered with name field being null");
+    
+    //testing unregistered client field
     assertFalse(newClient.isRegistered());
+    assertNull(newClient.getName());
+    assertNull(newClient.getPostCode());
     
     //testing invalid postcode
     String postCode = "EB16_7AY"; // incorrect "EB" starting
@@ -109,6 +125,7 @@ public class CateringCompanyClientImpTest {
     postCode = "EH17_5A2"; // incorrect postcode ending with num
     assertFalse(newClient.registerCateringCompany(name,postCode),"Postcode ending with upper-cased chars");
     
+    //test valid marginal postcode input for registration
     assertTrue(registeredClient.registerCateringCompany(registeredName,registeredPostCode),
             "Catering Company should have already been registered and return true");
     assertTrue(registeredClient.isRegistered());
@@ -117,37 +134,28 @@ public class CateringCompanyClientImpTest {
   }
   
   
-//  @Test
-//  @DisplayName("Testing valid marginal postcode input for catering company registration")
-//  public void testValidPostCodeCateringCompanyNewRegistration() {
-//    String name = generateValidRandomName();
-//
-//    String postCode = "EH1_5GG";
-//    assertTrue(newClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-//    postCode = "EH17_5GG";
-//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-//    postCode = "EH15_1GG";
-//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-//    postCode = "EH15_9GG";
-//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-//    postCode = "EH15_5AG";
-//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-//    postCode = "EH15_5AA";
-//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-//    postCode = "EH15_5ZG";
-//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-//    postCode = "EH15_5ZZ";
-//    assertTrue(invalidClient.registerCateringCompany(name,postCode),"Valid Marginal Postcode");
-//  }
-  
 
   // ----------------------------------- Order Updates Testing -----------------------------------
-
+  @Test
+  @DisplayName("Testing order status update from catering company side")
+  public void testUpdateOrderStatus(){
+    //test registered user with invalid status
+    assertFalse(orderedClient.updateOrderStatus(orderNumber,"placed"),"Status cannot be set to placed");
+    assertFalse(orderedClient.updateOrderStatus(orderNumber,"cancelled"),"Status cannot be set to cancelled.");
+    
+    //test registered user with valid status
+    assertTrue(orderedClient.updateOrderStatus(orderNumber,"packed"));
+    assertTrue(orderedClient.updateOrderStatus(orderNumber,"dispatched"));
+    assertTrue(orderedClient.updateOrderStatus(orderNumber,"delivered"));
+    
+    //test unregistered user
+    assertFalse(newClient.updateOrderStatus(100,"packed"),"Unregistered user shouldn't be able to use this method.");
+  }
 
   // ----------------------------------- Testing Helper Method -----------------------------------
   private String generateValidRandomName(){
     Random rand = new Random();
-    return ("testCateringCompany"+rand.nextInt(10000));
+    return ("testCateringCompanyClient"+rand.nextInt(10000));
   }
 
   private String generateValidRandomPostCode(){
