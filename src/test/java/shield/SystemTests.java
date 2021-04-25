@@ -186,7 +186,7 @@ public class SystemTests {
     //====== Main: registered user place an order of a none preference box without amending
     // Pre stage: registration
     ShieldingIndividualClientImp placeOrderClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
-    String placeOrderClientCHI = "0707071217";
+    String placeOrderClientCHI = "0707071219"; //TODO: when run after first time, change to un-used CHI or clear shielding_individual.txt
     String placeOrderClientPreference = "none";
     boolean registerSuccess = placeOrderClient.registerShieldingIndividual(placeOrderClientCHI);
     assertTrue(registerSuccess, "Fail to register new shielding individual client");
@@ -206,14 +206,12 @@ public class SystemTests {
     Collection<Integer> itemIds = placeOrderClient.getItemIdsForFoodBox(foodBoxId);
     assertEquals(itemNum, itemIds.size(), "Inconsistent in getting the number of item ids");
     int itemIdEdit = itemIds.iterator().next();
-    String itemName = placeOrderClient.getItemNameForFoodBox(itemIdEdit, foodBoxId);
     int itemQ = placeOrderClient.getItemQuantityForFoodBox(itemIdEdit, foodBoxId);
     System.out.println(itemQ);
     // add quantity => invalid
     assertFalse(placeOrderClient.changeItemQuantityForPickedFoodBox(itemIdEdit, itemQ+1));
     // reduce quantity => valid
     assertTrue(placeOrderClient.changeItemQuantityForPickedFoodBox(itemIdEdit, itemQ-1));
-  
     //----------End Amending / Reading for Place Order-------
     
     // place order
@@ -221,23 +219,71 @@ public class SystemTests {
     assertNull(placeOrderClient.getMarked(), "Fail to clear marked");
     ShieldingIndividualClientImp.Order latest = placeOrderClient.getBoxOrders().get(placeOrderClient.getBoxOrders().size()-1);
     assertEquals(foodBoxId, latest.foodBox.id, "Fail to order the picked box");
+    assertEquals(itemQ-1, placeOrderClient.getItemQuantityForOrder(foodBoxId,latest.orderId), "Fail to change item quantity");
     
     // this user should not be able to place another order if order again in the same week
     assertTrue(placeOrderClient.pickFoodBox(foodBoxId),"Should still be able to pick food box");
     assertFalse(placeOrderClient.placeOrder(), "Registered use could only order once a week");
     
     // Alternative 1: this user then cancel this order; then he is valid for placing another order
+    assertTrue(placeOrderClient.cancelOrder(latest.orderId));
+    // pick another food box while there's something staging
+    int newBoxId = Integer.parseInt(foodBoxIds.next());
+    assertTrue(placeOrderClient.pickFoodBox(newBoxId), "Fail to re-pick a food box");
+    assertTrue(placeOrderClient.placeOrder(), "Fail to place order");
+    assertNull(placeOrderClient.getMarked(), "Fail to clear marked");
+    latest = placeOrderClient.getBoxOrders().get(placeOrderClient.getBoxOrders().size()-1);
+    assertEquals(newBoxId, latest.foodBox.id, "Fail to order the picked box");
     
+    // Alternative 2: user hasn't registered could not place order
+    ShieldingIndividualClientImp placeOrderClient2 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+    assertFalse(placeOrderClient2.pickFoodBox(foodBoxId), "Unregistered user could not pick box");
+    assertFalse(placeOrderClient2.placeOrder(),"Unregistered user could not place order");
+    
+    // Alternative 3: registered user hasn't pick food box could not place order
+    String placeOrderClientCHI2 = "0101114567"; //TODO: when run after first time, change to un-used CHI or clear shielding_individual.txt
+    assertTrue(placeOrderClient2.registerShieldingIndividual(placeOrderClientCHI2), "Fail to register");
+    assertFalse(placeOrderClient2.placeOrder(), "Shouldn't place order without picking any box first");
   }
   
   
   @Test
   public void testEditOrderUseCase() {
+    // new register user place only one order;
+    ShieldingIndividualClientImp editOrderClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+    String editOrderClientCHI = "0101011239"; //TODO: when run after first time, change to un-used CHI or clear shielding_individual.txt
+    assertTrue(editOrderClient.registerShieldingIndividual(editOrderClientCHI), "Fail to register");
+    assertTrue(editOrderClient.pickFoodBox(1), "Fail to pick food box");
+    assertTrue(editOrderClient.placeOrder(),"Fail to place order");
     // get order number
-    
+    int orderId = editOrderClient.getBoxOrders().get(0).orderId;
     // set quantity to order
-    
+    Collection<Integer> itemIds = editOrderClient.getItemIdsForOrder(orderId);
+    int itemId = itemIds.iterator().next();
+    int itemQ = editOrderClient.getItemQuantityForOrder(itemId,orderId);
+    // validity of quantity to be set
+    assertFalse(editOrderClient.setItemQuantityForOrder(itemId,orderId,itemQ+1), "Could only reduce quantity");
+    assertTrue(editOrderClient.setItemQuantityForOrder(itemId,orderId,itemQ-1), "Should be able to reduce quantity");
+    assertNotNull(editOrderClient.getToBeEdited(), "Fail to stage order to be edited");
     // edit
+    assertTrue(editOrderClient.editOrder(orderId), "Fail to edit the edited order");
+    assertNull(editOrderClient.getToBeEdited(), "Fail to clear tobeEdit");
+    assertEquals(itemQ-1, editOrderClient.getItemQuantityForOrder(itemId, orderId), "Fail to set new quantity");
+    
+    // Alternative 1: invalid orderId
+    assertFalse(editOrderClient.setItemQuantityForOrder(itemId, orderId+1,itemQ-1), "Should not success for invalid orderId");
+    assertFalse(editOrderClient.editOrder(orderId+1), "Should not success for invalid orderId");
+    // Alternative 2: invalid itemId
+    int invalidItemId = 40;
+    Collection<Integer> validItems = editOrderClient.getItemIdsForOrder(orderId);
+    assertFalse(validItems.contains(invalidItemId), "Should reset invalidItemId");
+    assertFalse(editOrderClient.setItemQuantityForOrder(invalidItemId,orderId,itemQ-1), "Shouldn't success for invalid item id");
+    // Alternative 3: try to editOrder() without any changes
+    editOrderClient.setToBeEdited(null);
+    assertFalse(editOrderClient.editOrder(orderId), "Should not success as no change has been made");
+    // Alternative 4: unregistered user
+    ShieldingIndividualClientImp editOrderClient2 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+    assertFalse(editOrderClient2.setItemQuantityForOrder(itemId,orderId,itemQ));
   }
   
   
