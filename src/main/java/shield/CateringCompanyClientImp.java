@@ -63,7 +63,6 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
 
   
   // Question: what should true represent? false?
-  // Q2: no order info cached in this class
   @Override
   public boolean updateOrderStatus(int orderNumber, String status) {
     // check invalid inputs
@@ -84,7 +83,6 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     } catch (Exception e) {
       e.printStackTrace();
     }
-    
     return false;
   }
 

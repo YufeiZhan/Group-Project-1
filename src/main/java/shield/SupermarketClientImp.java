@@ -41,7 +41,7 @@ public class SupermarketClientImp implements SupermarketClient {
   @Override
   public boolean registerSupermarket(String name, String postCode) {
     //check validity of inputs
-    if (name == null || postCode == null || isValidPostCode(postCode)) return false;
+    if (name == null || postCode == null || !isValidPostCode(postCode)) return false;
     
     if(supermarket.isRegistered == true) return true;
     
@@ -138,6 +138,11 @@ public class SupermarketClientImp implements SupermarketClient {
   
   
   // ------------------------------------ Public Testing Helper Methods ------------------------------------
+  public void setSupermarket(String name, String postcode){
+    supermarket.name = name;
+    supermarket.postCode = postcode;
+    supermarket.isRegistered = true;
+  }
   public boolean orderExist(int orderNum){
     for (SupermarketOrder order: orderList){
       if (order.orderNum == orderNum){

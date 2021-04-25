@@ -28,6 +28,8 @@ public class SupermarketClientImpTest {
   private SupermarketClientImp registeredClient;
   private String registeredCHI;
   private int registeredOrderNum;
+  private String registeredSupermarketName;
+  private String registeredSupermarketPostcode;
   
   private SupermarketClientImp placedOrderClient;
   private String placedCHI;
@@ -59,7 +61,9 @@ public class SupermarketClientImpTest {
     registeredClient = new SupermarketClientImp(clientProps.getProperty("endpoint"));
     registeredCHI = generateValidCHI();
     registeredOrderNum = generateValidRandomInteger();
-    String registerRequest = "/registerSupermarket?business_name="+generateValidSupermarketName()+"&postcode=" + generateValidRandomPostCode();
+    registeredSupermarketName = generateValidSupermarketName();
+    registeredSupermarketPostcode = generateValidRandomPostCode();
+    String registerRequest = "/registerSupermarket?business_name="+registeredSupermarketName+"&postcode=" + registeredSupermarketPostcode;
     String userRegisterRequest2 = "/registerShieldingIndividual?CHI="+ registeredCHI;
     
     //Client to test place order
@@ -77,9 +81,11 @@ public class SupermarketClientImpTest {
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + registerRequest);
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + registerRequest2);
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegisterRequest);
+      registeredClient.setSupermarket(registeredSupermarketName,registeredSupermarketPostcode);
+      placedOrderClient.setOrder(placedCHI,placedOrderNum);
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegisterRequest2);
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + recordOrderRequest);
-      placedOrderClient.setOrder(placedCHI,placedOrderNum);
+      
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -108,9 +114,10 @@ public class SupermarketClientImpTest {
 
     //Test already registered
     assertTrue(nonRegisteredClient.registerSupermarket(newName,newPostCode),"Supermarket should be already registered and return true");
-    //TODO: change this function
-    assertTrue(registeredClient.registerSupermarket(registeredCHI, registeredClient.getPostCode()),
+    assertTrue(registeredClient.registerSupermarket(registeredClient.getName(), registeredClient.getPostCode()),
             "supermarket should be already registered and return true.");
+    assertEquals(registeredSupermarketName,registeredClient.getName(),"Registered name should be identical");
+    assertEquals(registeredSupermarketPostcode,registeredClient.getPostCode(),"Registered postcode should be identical");
     
     //++Test invalid input
   }
@@ -165,7 +172,7 @@ public class SupermarketClientImpTest {
   
   private String generateValidSupermarketName(){
     Random rand = new Random();
-    String result = "supermarket"+rand.nextInt(10000);
+    String result = "testSupermarketImpName"+rand.nextInt(10000);
     
     return result;
   }

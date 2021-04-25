@@ -56,6 +56,7 @@ public class CateringCompanyClientImpTest {
   @BeforeEach
   public void setup() {
     clientProps = loadProperties(clientPropsFilename);
+    
     newClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
     
     //registration client
@@ -149,7 +150,7 @@ public class CateringCompanyClientImpTest {
     assertTrue(orderedClient.updateOrderStatus(orderNumber,"delivered"));
     
     //test unregistered user
-    assertFalse(newClient.updateOrderStatus(100,"packed"),"Unregistered user shouldn't be able to use this method.");
+    assertFalse(newClient.updateOrderStatus(1,"packed"),"Unregistered user shouldn't be able to use this method.");
   }
 
   // ----------------------------------- Testing Helper Method -----------------------------------
