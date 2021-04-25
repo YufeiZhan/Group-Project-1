@@ -70,6 +70,22 @@ public class SystemTests {
   String cancelOrderCateringName;
   String cancelOrderCateringPostcode;
   
+  // Request Order Status Use Case
+  ShieldingIndividualClientImp  requestOrderStatusShieldingIndividualClient;
+  String requestOrderStatusShieldingIndividualCHI;
+  String requestOrderStatusShieldingIndividualPostcode;
+  CateringCompanyClientImp requestOrderStatusClient;
+  String requestOrderCateringName;
+  String requestOrderCateringPostcode;
+  
+  // Update Order Status Use Case
+  ShieldingIndividualClientImp  updateOrderStatusShieldingIndividualClient;
+  String updateOrderStatusShieldingIndividualCHI;
+  String updateOrderStatusShieldingIndividualPostcode;
+  CateringCompanyClientImp updateOrderStatusClient;
+  String updateOrderCateringName;
+  String updateOrderCateringPostcode;
+  
   
   @BeforeEach
   public void setup() {
@@ -103,7 +119,6 @@ public class SystemTests {
     
     
     // ---- Cancel Order ----
-    cancelOrderCateringClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
     cancelOrderShieldingIndividualClient1 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     cancelOrderShieldingIndividualClient2 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     cancelOrderShieldingIndividualClient3 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
@@ -113,8 +128,26 @@ public class SystemTests {
     cancelOrderShieldingIndividualPostcode1 = "EH1_1AA";
     cancelOrderShieldingIndividualPostcode2 = "EH1_1AB";
     cancelOrderShieldingIndividualPostcode3 = "EH1_1AC";
+    cancelOrderCateringClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
     cancelOrderCateringName = "cancelOrderCateringCompanyNameForSystemTest";
     cancelOrderCateringPostcode = "EH2_1AA";
+  
+    // ---- Request Order Status ----
+    requestOrderStatusShieldingIndividualClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));;
+    requestOrderStatusShieldingIndividualCHI = "0909090000";
+    requestOrderStatusShieldingIndividualPostcode = "EH1_1AD";
+    requestOrderStatusClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
+    requestOrderCateringName = "requestOrderCateringCompanyNameForSystemTest";
+    requestOrderCateringPostcode = "EH2_1AB";
+  
+    // ---- Update Order Status ----
+    updateOrderStatusShieldingIndividualClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));;
+    updateOrderStatusShieldingIndividualCHI = "0102030000";
+    updateOrderStatusShieldingIndividualPostcode = "EH1_1AE";
+    updateOrderStatusClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
+    updateOrderCateringName = "updateOrderCateringCompanyNameForSystemTest";
+    updateOrderCateringPostcode = "EH2_1AC";
+    
     
 
     // try {
@@ -288,7 +321,7 @@ public class SystemTests {
   
   
   @Test
-  public void testCancelOrderUseCase() { // -----
+  public void testCancelOrderUseCase() { //
     //1. user and catering company register first
     assertTrue(cancelOrderShieldingIndividualClient1.registerShieldingIndividual(cancelOrderShieldingIndividualCHI1),
             "New registration with valid CHI should be successful");
@@ -330,20 +363,84 @@ public class SystemTests {
     assertTrue(cancelOrderShieldingIndividualClient3.requestOrderStatus(orderNum3));
     assertEquals("dispatched",cancelOrderShieldingIndividualClient3.getStatusForOrder(orderNum3));
     
-    //check order 1,2 & try cancelling order in "cancelled" status
+    //5. check order 1,2 & try cancelling order in "cancelled" status
     assertFalse(cancelOrderShieldingIndividualClient1.cancelOrder(orderNum1));
     assertFalse(cancelOrderShieldingIndividualClient2.cancelOrder(orderNum2));
   }
   
-  
+  /**
+   * Test whether an updated order using http request can be updated into the java object.
+   * Use ShieldingIndividualClientImp class methods to register user, register catering company, pick an order and place an order.
+   * Then use http request to update the placed order status from "placed" to "dispatched" on the server side.
+   * Use requestOrderStatus() to check if the status is updated correctly in the object.
+   */
   @Test
   public void testRequestOrderStatusUseCase() {
+    //register user and catering company
+    assertTrue(requestOrderStatusShieldingIndividualClient.registerShieldingIndividual(requestOrderStatusShieldingIndividualCHI),
+            "New registration with valid CHI should be successful");
+    assertTrue(requestOrderStatusClient.registerCateringCompany(requestOrderCateringName,requestOrderCateringPostcode));
+//    TODO: when run the test for the second time, turn this setter on to ensure consistency with the server
+//    requestOrderStatusShieldingIndividualClient.setShieldingIndividual(requestOrderStatusShieldingIndividualCHI,requestOrderStatusShieldingIndividualCHI.getShieldingIndividualPostcode());
+//    requestOrderStatusClient.setCateringCompany(requestOrderCateringName,requestOrderCateringPostcode);
   
+    //pick order and place order
+    assertTrue(requestOrderStatusShieldingIndividualClient.pickFoodBox(1),"Registered user should be able to pick a food box order");
+    assertTrue(requestOrderStatusShieldingIndividualClient.placeOrder(),"Registered user should place order successfully after picking a food box.");
+    int orderNum = requestOrderStatusShieldingIndividualClient.getBoxOrders().get(0).orderId;
+    
+    //update order status from placed to delivered (3) using http request
+    String request = "/updateOrderStatus?order_id=" + orderNum + "&newStatus=delivered";
+    try{
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + request);
+    }catch (IOException e) {
+      e.printStackTrace();
+    }
+    
+    //check if requestOrderStatus work properly
+    assertEquals("placed",requestOrderStatusShieldingIndividualClient.getStatusForOrder(orderNum),"Should be placed status before updating");
+    assertTrue(requestOrderStatusShieldingIndividualClient.requestOrderStatus(orderNum));
+    assertEquals("delivered",requestOrderStatusShieldingIndividualClient.getStatusForOrder(orderNum),"Should ne delivered status after updating");
   }
   
-  
+  /**
+   * Test whether catering company client can update the status of the order correctly,
+   * and whether the user client can receive the update correctly.
+   * Test the main success scenario of updating order status from placed (1) -> packed (2) -> delivered (3) step by step.
+   *
+   * Test for the case when the new status is before or equal to the current status of the ordert too.
+   */
   @Test
-  public void testUpdateOrderStatusUseCase() {
-  
+  public void testUpdateOrderStatusUseCase(){
+    //register user and catering company
+    assertTrue(updateOrderStatusShieldingIndividualClient.registerShieldingIndividual(updateOrderStatusShieldingIndividualCHI),
+            "New registration with valid CHI should be successful");
+    assertTrue(updateOrderStatusClient.registerCateringCompany(updateOrderCateringName,updateOrderCateringPostcode));
+//    TODO: when run the test for the second time, turn this setter on to ensure consistency with the server
+//    updateOrderStatusShieldingIndividualClient.setShieldingIndividual(updateOrderStatusShieldingIndividualCHI,updateOrderStatusShieldingIndividualCHI.getShieldingIndividualPostcode());
+//    updateOrderStatusClient.setCateringCompany(updateOrderCateringName,updateOrderCateringPostcode);
+    
+    //pick order and place order
+    assertTrue(updateOrderStatusShieldingIndividualClient.pickFoodBox(1),"Registered user should be able to pick a food box order");
+    assertTrue(updateOrderStatusShieldingIndividualClient.placeOrder(),"Registered user should place order successfully after picking a food box.");
+    int orderNum = updateOrderStatusShieldingIndividualClient.getBoxOrders().get(0).orderId;
+    
+    //main success scenario: update order status from placed(0) -> packed(1) -> dispatched(2) -> delivered(3) one by one
+    //start from packed to delivered
+    for (int i = 1; i < 4; i++){
+      String orderStatus = updateOrderStatusShieldingIndividualClient.getStatusForOrder(orderNum);
+      assertEquals(updateOrderStatusShieldingIndividualClient.convertIntStatusToString(i-1),orderStatus);
+      assertTrue(updateOrderStatusClient.updateOrderStatus(orderNum,updateOrderStatusShieldingIndividualClient.convertIntStatusToString(i)));
+      assertTrue(updateOrderStatusShieldingIndividualClient.requestOrderStatus(orderNum));
+      assertEquals(updateOrderStatusShieldingIndividualClient.convertIntStatusToString(i),updateOrderStatusShieldingIndividualClient.getStatusForOrder(orderNum));
+    }
+    
+    //exceptional scenario: when new status <= old status
+    for (int i = 1; i < 4; i++){
+      assertFalse(updateOrderStatusClient.updateOrderStatus(orderNum,updateOrderStatusShieldingIndividualClient.convertIntStatusToString(i)),
+              "Delivered order shouldn't be updated with placed/packed/dispatched.");
+      assertEquals("delivered",updateOrderStatusShieldingIndividualClient.getStatusForOrder(orderNum),
+              "Delivered order should always be delivered.");
+    }
   }
 }
