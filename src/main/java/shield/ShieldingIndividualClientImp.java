@@ -268,15 +268,17 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     
     // precondition: isRegistered()
     if (!isRegistered()) return false;
-    // successfully toBeEdited has been set up
-    if (toBeEdited == null) return false;
-    assert toBeEdited != null: "toBeEdited should have been set";
     // precondition: orderNumber exist
-    //Collection<Integer> orderIds = getOrderNumbers();
-    //if (!orderIds.contains(orderNumber)) return false;
+    Collection<Integer> orderIds = getOrderNumbers();
+    if (!orderIds.contains(orderNumber)) return false;
+    // precondition: toBeEdited should be staged
+    if (toBeEdited == null) return false;
+    assert toBeEdited != null: "Haven't select and modify the order to be edited";
+    // precondition: staging toBeEdited must have same order number as parameter
+    if (toBeEdited.orderId != orderNumber) return false;
     // precondition: order status is still placed
-    //boolean success = requestOrderStatus(orderNumber); // update local order status
-    //assert success;
+    if (toBeEdited.status != 0) return false;
+    
     //String s = getStatusForOrder(orderNumber);
     //if (!s.equals("placed")) return false;
     /*
@@ -812,19 +814,19 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean pickOrderToEdit(int orderNumber) {
     // precondition: isRegistered()
     if (!isRegistered()) return false;
-    System.out.println(1);
+    //System.out.println(1);
     // precondition: orderNumber exist
     Collection<Integer> orderIds = getOrderNumbers();
-    System.out.println(2);
+    //System.out.println(2);
     if (!orderIds.contains(orderNumber)) return false;
     // precondition: order status is still placed
     boolean success = requestOrderStatus(orderNumber); // update local order status
-    System.out.println(3);
+    //System.out.println(3);
     if (!success) return false;
-    System.out.println(4);
+    //System.out.println(4);
     String s = getStatusForOrder(orderNumber);
-    System.out.println(5);
-    System.out.println(s);
+    //System.out.println(5);
+    //System.out.println(s);
     if (!s.equals("placed")) return false;
   
     System.out.println(6);
