@@ -36,10 +36,10 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     assert name != null;
     assert postCode != null;
     if (name == null || postCode == null) return false;
-//    if (! isValidPostCode(postCode)) return false; // check postCode format
+    if (! isValidPostCode(postCode)) return false; // check postCode format
     if (cateringCompany.isRegistered == true) return true;
     
-    String request = "/registerCateringCompany?business name="+name+"&postcode="+postCode;
+    String request = "/registerCateringCompany?business_name="+name+"&postcode="+postCode;
     String EXIST = "already registered";
     String SUCCESS = "registered new";
     boolean result = false;
@@ -71,22 +71,21 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     String[] validStatus = new String[]{"packed", "dispatched", "delivered"};
     if (!Arrays.asList(validStatus).contains(status)) return false; // check validation of status
     
-    String request = "/updateOrderStatus?order id="+orderNumber+"&newStatus="+status;
-    boolean result = false;
+    String request = "/updateOrderStatus?order_id="+orderNumber+"&newStatus="+status;
     
     try {
       // perform request
       String response = ClientIO.doGETRequest(endpoint + request);
       
       if (response.equals("True")) {
-        result = true;
+        return true;
       }
       
     } catch (Exception e) {
       e.printStackTrace();
     }
     
-    return result;
+    return false;
   }
 
   @Override
