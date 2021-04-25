@@ -166,7 +166,7 @@ public class ShieldingIndividualClientImpTest {
               "&catering_postcode=" + w;
       //-------------update server for order 1----------------
       String response1 = ClientIO.doPOSTRequest(clientProps.getProperty("endpoint")+o2, content1);
-      orderId1 = Integer.parseInt(response1); //TODO: save orderId as attributes of this class for future reference
+      orderId1 = Integer.parseInt(response1);
       // set desired order status
       String status1 = "/updateOrderStatus?order_id="+orderId1+"&newStatus=delivered";
       String statusRes1 = ClientIO.doGETRequest(clientProps.getProperty("endpoint") + status1);
@@ -174,7 +174,7 @@ public class ShieldingIndividualClientImpTest {
       assertEquals("True", statusRes1);
       //-------------update server for order 2----------------
       String response2 = ClientIO.doPOSTRequest(clientProps.getProperty("endpoint")+o2, content1);
-      orderId2 = Integer.parseInt(response2); //TODO: save orderId as attributes of this class for future reference
+      orderId2 = Integer.parseInt(response2);
       //-------------update local order history----------------
       ShieldingIndividualClientImp.Order newOrder1 = new ShieldingIndividualClientImp.Order();
       newOrder1.status = 3;
@@ -185,7 +185,7 @@ public class ShieldingIndividualClientImpTest {
       newOrder2.status = 0;
       newOrder2.orderId = orderId2;
       newOrder2.foodBox = b2;
-      newOrder2.placeTime = LocalDateTime.of(2021,4,27,17,45,39); //TODO: if testing after 2021-04-25, replace to a date in the same week of the testing day.
+      newOrder2.placeTime = LocalDateTime.now();
       
       List<ShieldingIndividualClientImp.Order> orders = new ArrayList<ShieldingIndividualClientImp.Order>();
       orders.add(newOrder1);
@@ -205,7 +205,7 @@ public class ShieldingIndividualClientImpTest {
               "&catering_postcode=" + w;
       
       String response3 = ClientIO.doPOSTRequest(clientProps.getProperty("endpoint")+o3, content1);
-      orderId3 = Integer.parseInt(response3); //TODO: save orderId as attributes of this class for future reference
+      orderId3 = Integer.parseInt(response3);
       // set desired order status
       String status3 = "/updateOrderStatus?order_id="+orderId3+"&newStatus=delivered";
       String statusRes3 = ClientIO.doGETRequest(clientProps.getProperty("endpoint") + status3);
@@ -331,8 +331,6 @@ public class ShieldingIndividualClientImpTest {
     Type listType = new TypeToken<ShieldingIndividualClientImp.MessagingFoodBox>() {} .getType();
     ShieldingIndividualClientImp.MessagingFoodBox b1 = new Gson().fromJson(box1, listType);
     registeredClient2.setMarked(b1);
-    // We've set this client to have an order on 2021-04-20, if you test after 2021-04-25, this should cause error for the assertion below
-    // TODO to make it pass, you should set to a date within the week of your testing date in line 188 in the setup section
     assertFalse(registeredClient2.placeOrder());
     // test registered user that has placed order: If the latest one is not within one week
     registeredClient3.setMarked(b1);
@@ -594,7 +592,6 @@ public class ShieldingIndividualClientImpTest {
     assertFalse(newClient.changeItemQuantityForPickedFoodBox(2,1),"Unregistered user shouldn't be able to use this method.");
   }
   
-  //TODO: for following methods, try to tag them and add some orders in boxOrder list before each
   @Test
   public void testGetOrderNumbers() {
     // no order history
