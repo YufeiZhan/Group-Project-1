@@ -147,14 +147,6 @@ public class SystemTests {
     updateOrderStatusClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
     updateOrderCateringName = "updateOrderCateringCompanyNameForSystemTest";
     updateOrderCateringPostcode = "EH2_1AC";
-    
-    
-
-    // try {
-    
-    // } catch (IOException e) {
-    //   e.printStackTrace();
-    // }
   }
   
   

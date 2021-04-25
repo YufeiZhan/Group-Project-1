@@ -46,7 +46,6 @@ public class SupermarketClientImpTest {
     } catch (Exception e) {
       e.printStackTrace();
     }
-
     return props;
   }
 
@@ -92,7 +91,6 @@ public class SupermarketClientImpTest {
   }
   
   @Test
-//  @DisplayName()
   public void testConstructorInitialization() {
     assertFalse(nonRegisteredClient.isRegistered(), "Supermarket shouldn't be registered before registration");
     assertNull(nonRegisteredClient.getName(),"Supermarket shouldn't have a name before registration");
@@ -173,7 +171,6 @@ public class SupermarketClientImpTest {
   private String generateValidSupermarketName(){
     Random rand = new Random();
     String result = "testSupermarketImpName"+rand.nextInt(10000);
-    
     return result;
   }
 
@@ -187,7 +184,7 @@ public class SupermarketClientImpTest {
     char secondChar = (char) (uppercaseBase + secondRandomNum);
 
     String postCode = "EH" + String.valueOf(rand.nextInt(17) + 1) + '_' +
-            String.valueOf(rand.nextInt(9) + 1) + firstChar + secondChar;
+            (rand.nextInt(9) + 1) + firstChar + secondChar;
 
     return postCode;
   }
@@ -210,7 +207,6 @@ public class SupermarketClientImpTest {
       char randomChar = (char) (uppercaseBase + randomInt);
       result = result + randomChar;
     }
-    
     return result;
   }
 }

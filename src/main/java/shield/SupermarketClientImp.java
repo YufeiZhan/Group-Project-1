@@ -178,7 +178,6 @@ public class SupermarketClientImp implements SupermarketClient {
   
   // --------------------------------------- Private Helper Methods ---------------------------------------
   private SupermarketOrder getOrderFromList(int orderNum){
-    // ++ assertion where orderNum shouldn't be null?
     for (SupermarketOrder order: orderList){
       if(order.orderNum == orderNum){
         return order;

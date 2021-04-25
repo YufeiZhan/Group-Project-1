@@ -20,14 +20,15 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  *
  */
-
 public class CateringCompanyClientImpTest {
+  
   private final static String clientPropsFilename = "client.cfg";
-
   private Properties clientProps;
   
+  //Unregistered Catering Company Client
   private CateringCompanyClientImp newClient;
   
+  //Registered Catering Company Client
   private CateringCompanyClientImp registeredClient;
   private String registeredName;
   private String registeredPostCode;
@@ -35,8 +36,7 @@ public class CateringCompanyClientImpTest {
   //Order Update
   private CateringCompanyClientImp orderedClient;
   private int orderNumber;
-
-
+  
 
   private Properties loadProperties(String propsFilename) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -50,9 +50,9 @@ public class CateringCompanyClientImpTest {
     }
 
     return props;
-
   }
-
+  
+  // ---------------------------------------- Test Setup ----------------------------------------
   @BeforeEach
   public void setup() {
     clientProps = loadProperties(clientPropsFilename);
@@ -65,6 +65,7 @@ public class CateringCompanyClientImpTest {
     registeredPostCode = "EH17_9ZZ";
     String registrationRequest = "/registerCateringCompany?business_name="+registeredName+"&postcode="+registeredPostCode;
     
+    //place order client
     orderedClient = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
     String orderedCHI = "0909990000";
     String userRegistrationRequest =  "/registerShieldingIndividual?CHI=" + orderedCHI;

@@ -14,12 +14,12 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 
 public class Main {
-  public static void main(String[] args) {
+//  public static void main(String[] args) {
  
     //之前register过的 重新new instance之后，就没办法retrieve info
     //所以isregisered 却没有办法通过server reset user的info
   
-    ShieldingIndividualClientImp test = new ShieldingIndividualClientImp("http://0.0.0.0:5000/");
+//    ShieldingIndividualClientImp test = new ShieldingIndividualClientImp("http://0.0.0.0:5000/");
    // test.registerShieldingIndividual("1212120163");
    // assert test.isRegistered();
     //LocalDateTime t = LocalDateTime.of(2021,4,12,12,1,0);
@@ -236,9 +236,9 @@ public class Main {
   
   
   
-    return;
+//    return;
 
 //    SupermarketClientImp supermarket = new SupermarketClientImp();
 
-  }
+//  }
 }

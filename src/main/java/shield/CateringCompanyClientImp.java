@@ -101,7 +101,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     return cateringCompany.postCode;
   }
   // ------------------------------------ Public Testing Helper Methods -----------------------------------
-  public void setCateringCompany(String name, String postcode){
+  protected void setCateringCompany(String name, String postcode){
     cateringCompany.name = name;
     cateringCompany.postCode = postcode;
     cateringCompany.isRegistered = true;

@@ -185,7 +185,7 @@ public class ShieldingIndividualClientImpTest {
       newOrder2.status = 0;
       newOrder2.orderId = orderId2;
       newOrder2.foodBox = b2;
-      newOrder2.placeTime = LocalDateTime.of(2021,4,25,17,45,39); //TODO: if testing after 2021-04-25, replace to a date in the same week of the testing day.
+      newOrder2.placeTime = LocalDateTime.of(2021,4,27,17,45,39); //TODO: if testing after 2021-04-25, replace to a date in the same week of the testing day.
       
       List<ShieldingIndividualClientImp.Order> orders = new ArrayList<ShieldingIndividualClientImp.Order>();
       orders.add(newOrder1);
@@ -331,8 +331,9 @@ public class ShieldingIndividualClientImpTest {
     Type listType = new TypeToken<ShieldingIndividualClientImp.MessagingFoodBox>() {} .getType();
     ShieldingIndividualClientImp.MessagingFoodBox b1 = new Gson().fromJson(box1, listType);
     registeredClient2.setMarked(b1);
-    assertFalse(registeredClient2.placeOrder()); // We have set this client to have an order on 2021-04-20, if you test after 2021-04-25, this should cause error
-                                                // You should set TODO in setup to a date within the week of your testing date.
+    // We've set this client to have an order on 2021-04-20, if you test after 2021-04-25, this should cause error for the assertion below
+    // TODO to make it pass, you should set to a date within the week of your testing date in line 188 in the setup section
+    assertFalse(registeredClient2.placeOrder());
     // test registered user that has placed order: If the latest one is not within one week
     registeredClient3.setMarked(b1);
     assertTrue(registeredClient3.placeOrder());
@@ -417,11 +418,9 @@ public class ShieldingIndividualClientImpTest {
     assertFalse(cancelOrderClient.cancelOrder(cancelOrderClient.getBoxOrders().get(2).orderId),"Cancelling Order with valid order status should be valid operation.");
   
     // test registered user cancel order successfully
-    //TODO：seems like dispatch cannot be cancelled as well using server
-    for(int i = 0; i <= 1; i++){
-//      System.out.println("Test pre-status:" + cancelOrderClient.getBoxOrders().get(i).status);
+    // reminder that dispatched cannot be cancelled as well
+    for(int i = 0; i < 2; i++){
       assertTrue(cancelOrderClient.cancelOrder(cancelOrderClient.getBoxOrders().get(i).orderId),"Cancelling Order with invalid order status should be invalid operation.");
-//      System.out.println(i);
     }
     
     // test unregistered user
