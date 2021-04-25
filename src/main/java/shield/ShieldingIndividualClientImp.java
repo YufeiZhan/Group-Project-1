@@ -93,7 +93,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (CHI.length() != 10) return false;
     // format
     if (!CHI.matches("[0-9]{10}")) return false;
-    System.out.println(1);
+//    System.out.println(1);
     
     int dd = Integer.parseInt(CHI.substring(0,2));
     int mm = Integer.parseInt(CHI.substring(2,4));
@@ -105,21 +105,21 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       dateIsValid = false;
     }
     if (!dateIsValid) return false;
-    System.out.println("2");
+//    System.out.println("2");
     
     // construct the endpoint request
     String request = "/registerShieldingIndividual?CHI=" + CHI;
   
     // setup the response recepient
     List<String> responseDetail = new ArrayList<String>();
-    System.out.println(7);
+//    System.out.println(7);
     try {
       // perform request
       String response = ClientIO.doGETRequest(endpoint + request);
       assert response != null;
       System.out.println(response.equals("already registered"));
       if (response.equals("already registered")) return true;
-      System.out.println(4);
+//      System.out.println(4);
       // unmarshal response
       Type listType = new TypeToken<Collection<String>>() {}.getType();
       responseDetail = new Gson().fromJson(response, listType);
@@ -132,10 +132,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       shieldingIndividual.phoneNumber = responseDetail.get(3);
       shieldingIndividual.CHI = CHI;
       shieldingIndividual.registered = true;
-      System.out.println(5);
+//      System.out.println(5);
       //set cateringCompany
       getClosestCateringCompany();
-      System.out.println(6);
+      System.out.println("User register checked cc assign: " + cateringCompany.name);
+//      System.out.println(6);
       //set order list
       boxOrders = new ArrayList<Order>();
       //set default box
@@ -144,7 +145,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       return true;
       
     } catch (Exception e) {
-      System.out.println(3);
+//      System.out.println(3);
       e.printStackTrace();
       return false;
     }
@@ -197,21 +198,24 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   // **UPDATE2** REMOVED PARAMETER
   @Override
   public boolean placeOrder() {
+    System.out.println("Enter placeOrder.");
     // precondition: isRegistered()
     if (!isRegistered()) return false;
     //precondition: assigned closest company
-    if (cateringCompany == null) {
-      getClosestCateringCompany();
-    }
-    System.out.println("here1");
+    System.out.println("placeOrder cc pre-assignment check: " + cateringCompany);
+    //always assign the most updated catering company
+    getClosestCateringCompany();
+//    System.out.println("here1");
     if (cateringCompany == null) return false;
-    System.out.println("here2");
+//    System.out.println("here2");
     // precondition: haven't ordered this week / never ordered
     if (boxOrders.size() > 0) {
       Order latest = boxOrders.get(boxOrders.size() - 1);
       if (isInSameWeek(latest.placeTime) && latest.status != 4) return false;
     }
-    System.out.println("here3");
+    
+    System.out.println("placeOrder preconditions checked.");
+//    System.out.println("here3");
     /*
     if (latest != null) {
       Duration delta = Duration.between(latest.placeTime, LocalDateTime.now());
@@ -227,8 +231,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     Gson gson = new Gson();
     String data = gson.toJson(marked.contents);
     data = "{\"contents\":" + data + "}";
-    System.out.println(data);
-    
+//    System.out.println(data);
+    System.out.println("placeOrder marked checked.");
     
     String x = shieldingIndividual.CHI;
     String z = cateringCompany.name;
@@ -236,14 +240,15 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     String request = "/placeOrder?individual_id="+ x +
                      "&catering_business_name=" + z +
                      "&catering_postcode=" + w;
-  
+    System.out.println("placeOrder request checked: " + x +" "+ z + " " +w);
     request = endpoint + request;
   
     try {
       // perform request
       String response = ClientIO.doPOSTRequest(request, data);
-      System.out.println(response);
+//      System.out.println(response);
       assert response != null;
+      System.out.println("placeOrder reponse checked:" + response);
       
       // add into the order history
       int id = Integer.parseInt(response);
@@ -359,22 +364,17 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     Collection<Integer> orderIds = getOrderNumbers();
     if (!orderIds.contains(orderNumber)) return false;
     // precondition: order status is still placed, packed or dispatched
-    System.out.println("Place Order number1:" +orderNumber+"; status:"+ boxOrders.get(2).status);
     if (!requestOrderStatus(orderNumber)) return false; // update local order status too if a valid query
-    System.out.println("Place Order number2:" +orderNumber+"; status:"+ boxOrders.get(2).status);
     String s = getStatusForOrder(orderNumber);
-    System.out.println(s);
-    if (s.equals("delivered") || s.equals("cancelled")) return false;
-    System.out.println("check");
+    if (s.equals("delivered") || s.equals("cancelled") || s.equals("dispatched")) return false;
     String request = endpoint + "/cancelOrder?order_id="+orderNumber;
-    System.out.println(request);
   
     try {
       // perform request
       String response = ClientIO.doGETRequest(request);
       assert response != null;
     
-      System.out.println("response: "+ response);
+//      System.out.println("response: "+ response);
       if (response.equals("True")) {
         for (Order o: boxOrders) {
           if (o.orderId == orderNumber) {
@@ -635,13 +635,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean pickFoodBox(int foodBoxId) {
+//    System.out.println("enter pickFoodBox.");
     // check individual's validity to use methods
     if (!isRegistered()) return false;
+//    System.out.println("pickFoodBox pre-condition1 checked.");
     //check validation of foodBoxId
     if (!isValidFoodBoxId(foodBoxId)){
       marked = null; // check Piazza 693
       return false;
     }
+//    System.out.println("pickFoodBox pre-condition2 checked.");
   
     List<MessagingFoodBox> responseBoxes = getFoodBoxes("all");
     MessagingFoodBox fb = null;
@@ -711,9 +714,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     //TODO: refactor
     for (Order o: boxOrders) {
       if (o.orderId == orderNumber) {
-        System.out.println(o.status);
+//        System.out.println(o.status);
         if (o.status == 0) {
-          System.out.println("se");
+//          System.out.println("se");
           return "placed";
         }
         else if (o.status == 1) return "packed";
@@ -828,22 +831,22 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean pickOrderToEdit(int orderNumber) {
     // precondition: isRegistered()
     if (!isRegistered()) return false;
-    System.out.println(1);
+//    System.out.println(1);
     // precondition: orderNumber exist
     Collection<Integer> orderIds = getOrderNumbers();
-    System.out.println(2);
+//    System.out.println(2);
     if (!orderIds.contains(orderNumber)) return false;
     // precondition: order status is still placed
     boolean success = requestOrderStatus(orderNumber); // update local order status
-    System.out.println(3);
+//    System.out.println(3);
     if (!success) return false;
-    System.out.println(4);
+//    System.out.println(4);
     String s = getStatusForOrder(orderNumber);
-    System.out.println(5);
+//    System.out.println(5);
     //System.out.println(s);
     if (!s.equals("placed")) return false;
   
-    System.out.println(6);
+//    System.out.println(6);
     for (Order o: boxOrders) {
       if (o.orderId == orderNumber) {
         Gson gson = new Gson();
@@ -867,16 +870,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean setItemQuantityForOrder(int itemId, int orderNumber, int quantity) { // currently work for all order
     // check individual's validity to use methods
     if (!isRegistered()) return false;
-    System.out.println("s1");
+//    System.out.println("s1");
     //check validation of inputs
     if (boxOrders == null) return false; //what if used in place order
                                          // and the order is the first order ever that this individual have placed.
                                          // that is, boxOrders is indeed null;
-    System.out.println("s2");
+//    System.out.println("s2");
     if (toBeEdited == null || toBeEdited.orderId != orderNumber) {
-      System.out.println("s4");
+//      System.out.println("s4");
       boolean success = pickOrderToEdit(orderNumber);
-      System.out.println(success);
+//      System.out.println(success);
       if (!success) return false;
     }
     assert (toBeEdited.orderId == orderNumber);
@@ -896,7 +899,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       if (c.id == itemId) {
         if (quantity < c.quantity) {
           c.quantity = quantity;
-          System.out.println("q:"+c.quantity);
+//          System.out.println("q:"+c.quantity);
           return true;
         }
       }
@@ -911,13 +914,18 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   //assign the most closest cc when call this function each time
   public String getClosestCateringCompany() {
+    System.out.println("!!Enter getClosestCC");
     // check individual's validity to use methods
     if (!isRegistered()) return null;
     Collection<String> companies = getCateringCompanies();
     assert companies != null:"Fail to Get Catering Companies";
     List<String> caters = new ArrayList<String>(companies);
+  
+    System.out.println("getClosestCC caters size: " + caters.size());
     
     if (caters.size() < 1) return null;
+  
+    System.out.println("!getClosestCC post-size check: ");
   
     //get the distance of the first cater as baseline
     List<String> info = Arrays.asList(caters.get(0).split(","));
@@ -937,11 +945,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
     
     cateringCompany = new CateringCompany();
-    
     cateringCompany.id = info.get(0);
     cateringCompany.name = info.get(1);
     cateringCompany.postCode = info.get(2);
-    
+    System.out.println("!!getClosestCC check: "+ info.get(0)+ " " + info.get(1) + " " + info.get(2));
+  
+  
     return cateringCompany.name;
    
   }
@@ -955,6 +964,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public void setMarked(MessagingFoodBox b) {this.marked = b;}
   public List<Order> getBoxOrders() {return this.boxOrders;}
   public ShieldingIndividual getShieldingIndividual() {return this.shieldingIndividual;}
+  public String getShieldingIndividualPostcode() {return this.shieldingIndividual.postCode;}
   
   public void setBoxOrders(List<Order> boxOrders) {
     this.boxOrders = boxOrders;
