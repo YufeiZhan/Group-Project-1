@@ -30,7 +30,7 @@ public class ShieldingIndividualClientImpTest {
   private ShieldingIndividualClientImp newClient;
   private String newCHI;
   
-  private ShieldingIndividualClientImp registeredClient;
+  private ShieldingIndividualClientImp registeredClient; // with no order history
   private String registeredCHI;
   private String registeredValidOrderNum;
   private int registeredInvalidOrderNum;
@@ -38,11 +38,18 @@ public class ShieldingIndividualClientImpTest {
   private ShieldingIndividualClientImp closestCateringCompanyClient;
   private String closestCateringCompanyName;
   
-  private ShieldingIndividualClientImp registeredClient2; // with no order history
-  private String testCHI2; 
+  private ShieldingIndividualClientImp registeredClient2; // with latest order placed this week
+  private String testCHI2;
+  private int orderId1;
+  private int orderId2;
   
   private ShieldingIndividualClientImp registeredClient3; // with latest order placed last week
   private String testCHI3;
+
+  private int orderId3;
+  
+  private int invalidOrderId = 5789;
+
   
   //Edit Box
 //  private ShieldingIndividualClientImp editBoxClient;
@@ -53,11 +60,13 @@ public class ShieldingIndividualClientImpTest {
   private ShieldingIndividualClientImp cancelOrderClient;
   private String cancelOrderUserCHI;
   private String cancelOrderCateringCompanyName;
+  private String cancelOrderCateringCompanyPostCode;
   
   //Request Order
   private ShieldingIndividualClientImp requestOrderClient;
   private String requestOrderUserCHI;
   private String requestOrderCateringCompanyName;
+  private String requestOrderCateringCompanyPostCode;
 
   private Properties loadProperties(String propsFilename) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -84,34 +93,33 @@ public class ShieldingIndividualClientImpTest {
     registeredCHI = "0505150000";
     String userRegistrationRequest = "/registerShieldingIndividual?CHI="+registeredCHI;
     
+    // ------- Edit Order -------
     registeredClient2 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));  //add
     testCHI2 = "0505150110"; //add
     String userRegistration2Request = "/registerShieldingIndividual?CHI="+testCHI2; //add
-    
+  
     registeredClient3 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     testCHI3 = "0504130000";
     String userRegistration3Request = "/registerShieldingIndividual?CHI="+testCHI3;
-  
-    // ------- Edit Order -------
-//    editBoxClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
-//    editBoxUserCHI = "0404040000";
-//    String editBoxUserRegistrationRequest = "/registerShieldingIndividual?CHI="+editBoxUserCHI;
 
     // ------- Cancel Order -------
     cancelOrderClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     cancelOrderUserCHI = "0202020000";
     String cancelOrderUserRegistrationRequest = "/registerShieldingIndividual?CHI="+cancelOrderUserCHI;
     cancelOrderCateringCompanyName = "cancelOrderTestCateringCompany";
+    cancelOrderCateringCompanyPostCode = "EH6_5GG";
+    
     String cancelOrderCateringCompanyRegistrationRequest = "/registerCateringCompany?business_name=" + cancelOrderCateringCompanyName
-            + "&postcode=" + generalTestPostcode;
+            + "&postcode=" + cancelOrderCateringCompanyPostCode;
   
     // ------- Request Order -------
     requestOrderClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     requestOrderUserCHI = "0606060000";
     String requestOrderUserRegistrationRequest = "/registerShieldingIndividual?CHI="+requestOrderUserCHI;
     requestOrderCateringCompanyName = "requestOrderTestCateringCompany";
+    requestOrderCateringCompanyPostCode = "EH1_1AA";
     String requestOrderCateringCompanyRegistrationRequest = "/registerCateringCompany?business_name=" + requestOrderCateringCompanyName
-            + "&postcode=" + generalTestPostcode;
+            + "&postcode=" + requestOrderCateringCompanyPostCode;
     
     // ------- Closest Catering Company -------
     closestCateringCompanyName = "tempCateringCompanyForTestInShieldingClient";
@@ -122,49 +130,103 @@ public class ShieldingIndividualClientImpTest {
     
   
     try {
+      //-------------Closest Company----------------
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + closestCateringCompanyRegistrationRequest);
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + closestCateringCompanyClientRegistrationRequest);
+      closestCateringCompanyClient.setShieldingIndividual(closestCateringCompanyCHI,generalTestPostcode);
+      
+      //--------for registeredClient-----------
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegistrationRequest);
 //      registeredValidOrderNum = ClientIO.doGETRequest(clientProps.getProperty("endpoint") + placedOrderRequest);
       registeredClient.setShieldingIndividual(registeredCHI,generalTestPostcode);
 //      registeredClient.setStagedFoodBox();
+      registeredClient.setCateringCompany(closestCateringCompanyName,generalTestPostcode);
   
-      //-------------setOrders----------------
-      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegistration2Request); //add
-      registeredClient2.setShieldingIndividual(testCHI2,generalTestPostcode); //add
+      //===============setOrders=================
       String box1 = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
                     "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}],\"delivered_by\":\"catering\"," +
                     "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}";
+      String content1 = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
+              "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}]}";
       Type listType = new TypeToken<ShieldingIndividualClientImp.MessagingFoodBox>() {} .getType();
       
-      // for registeredClient
+      //============for registeredClient2===============
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegistration2Request); //add
+      registeredClient2.setShieldingIndividual(testCHI2,generalTestPostcode); //add
+      registeredClient2.setCateringCompany(closestCateringCompanyName,generalTestPostcode); //add
       ShieldingIndividualClientImp.MessagingFoodBox b1 = new Gson().fromJson(box1, listType);
       ShieldingIndividualClientImp.MessagingFoodBox b2 = new Gson().fromJson(box1, listType);
+      
+      // prepare place order request to server
+      String x = testCHI2;
+      String z = closestCateringCompanyName;
+      String w = generalTestPostcode;
+      String o2 = "/placeOrder?individual_id="+ x +
+              "&catering_business_name=" + z +
+              "&catering_postcode=" + w;
+      //-------------update server for order 1----------------
+      String response1 = ClientIO.doPOSTRequest(clientProps.getProperty("endpoint")+o2, content1);
+      orderId1 = Integer.parseInt(response1); //TODO: save orderId as attributes of this class for future reference
+      // set desired order status
+      String status1 = "/updateOrderStatus?order_id="+orderId1+"&newStatus=delivered";
+      String statusRes1 = ClientIO.doGETRequest(clientProps.getProperty("endpoint") + status1);
+      //System.out.println(statusRes1);
+      assertEquals("True", statusRes1);
+      //-------------update server for order 2----------------
+      String response2 = ClientIO.doPOSTRequest(clientProps.getProperty("endpoint")+o2, content1);
+      orderId2 = Integer.parseInt(response2); //TODO: save orderId as attributes of this class for future reference
+      //-------------update local order history----------------
       ShieldingIndividualClientImp.Order newOrder1 = new ShieldingIndividualClientImp.Order();
       newOrder1.status = 3;
-      newOrder1.orderId = 1;
+      newOrder1.orderId = orderId1;
       newOrder1.foodBox = b1;
       newOrder1.placeTime = LocalDateTime.of(2021,4,12,17,45,39);
       ShieldingIndividualClientImp.Order newOrder2 = new ShieldingIndividualClientImp.Order();
       newOrder2.status = 0;
-      newOrder2.orderId = 2;
+      newOrder2.orderId = orderId2;
       newOrder2.foodBox = b2;
-      newOrder2.placeTime = LocalDateTime.of(2021,4,20,17,45,39); //TODO: if testing after 2021-04-25, replace to a date in the same week of the testing day.
+      newOrder2.placeTime = LocalDateTime.of(2021,4,25,17,45,39); //TODO: if testing after 2021-04-25, replace to a date in the same week of the testing day.
       
-      //registeredClient.setLatest(newOrder2);
       List<ShieldingIndividualClientImp.Order> orders = new ArrayList<ShieldingIndividualClientImp.Order>();
       orders.add(newOrder1);
       orders.add(newOrder2);
-      registeredClient.setBoxOrders(orders);
+      registeredClient2.setBoxOrders(orders);
       
-      // for registeredCLient3
+      //---------for registeredClient3------------
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + userRegistration3Request); //add
+      registeredClient3.setShieldingIndividual(testCHI3,generalTestPostcode); //add
+      registeredClient3.setCateringCompany(closestCateringCompanyName,generalTestPostcode);
+      // place order to server
+      x = testCHI3;
+      z = closestCateringCompanyName;
+      w = generalTestPostcode;
+      String o3 = "/placeOrder?individual_id="+ x +
+              "&catering_business_name=" + z +
+              "&catering_postcode=" + w;
+      
+      String response3 = ClientIO.doPOSTRequest(clientProps.getProperty("endpoint")+o3, content1);
+      orderId3 = Integer.parseInt(response3); //TODO: save orderId as attributes of this class for future reference
+      // set desired order status
+      String status3 = "/updateOrderStatus?order_id="+orderId3+"&newStatus=delivered";
+      String statusRes3 = ClientIO.doGETRequest(clientProps.getProperty("endpoint") + status3);
+      assertEquals("True", statusRes3);
+      
+      ShieldingIndividualClientImp.MessagingFoodBox b3 = new Gson().fromJson(box1, listType);
       ShieldingIndividualClientImp.Order newOrder3 = new ShieldingIndividualClientImp.Order();
       newOrder3.status = 3;
-      newOrder3.orderId = 1;
-//      newOrder3.foodBox = b3;
+      newOrder3.orderId = orderId3; //orginally 1
+      newOrder3.foodBox = b3;
       newOrder3.placeTime = LocalDateTime.of(2021,4,12,17,45,39);
       
       List<ShieldingIndividualClientImp.Order> orders3 = new ArrayList<ShieldingIndividualClientImp.Order>();
       orders3.add(newOrder3);
       registeredClient3.setBoxOrders(orders3);
+      //-------------Set invalid order number-------------
+      
+      while (invalidOrderId == orderId1 || invalidOrderId == orderId2 || invalidOrderId == orderId3) {
+        invalidOrderId += 1;
+      }
+      
   
       //------------- Edit Box ----------------
 //      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + editBoxUserRegistrationRequest);
@@ -173,14 +235,14 @@ public class ShieldingIndividualClientImpTest {
       //------------- Cancel Order ----------------
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + cancelOrderUserRegistrationRequest);
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + cancelOrderCateringCompanyRegistrationRequest);
-      cancelOrderClient.setShieldingIndividual(cancelOrderUserCHI, generalTestPostcode);
+      cancelOrderClient.setShieldingIndividual(cancelOrderUserCHI, cancelOrderCateringCompanyPostCode);
       cancelOrderClient.setBoxOrders(cancelOrderClient.createDummyTestOrderList());
       // place order using the dummy ids
       Gson gson = new Gson();
       String cancelOrderPlaceOrderData = "{\"contents\":" + gson.toJson(cancelOrderClient.getBoxOrders().get(0).foodBox.contents) + "}";
       String cancelOrderPlaceOrderRequest = clientProps.getProperty("endpoint") + "/placeOrder?individual_id="+ cancelOrderUserCHI +
               "&catering_business_name=" + cancelOrderCateringCompanyName +
-              "&catering_postcode=" + generalTestPostcode;
+              "&catering_postcode=" + cancelOrderCateringCompanyPostCode;
       // update server with correct dummy orders' status
       for(int i = 0; i <= 2; i++){
         //update correct ids
@@ -194,13 +256,13 @@ public class ShieldingIndividualClientImpTest {
       //-------------Request Order Status----------------
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestOrderUserRegistrationRequest);
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestOrderCateringCompanyRegistrationRequest);
-      requestOrderClient.setShieldingIndividual(requestOrderUserCHI, generalTestPostcode);
+      requestOrderClient.setShieldingIndividual(requestOrderUserCHI, requestOrderCateringCompanyPostCode);
       requestOrderClient.setBoxOrders(requestOrderClient.createDummyTestOrderList());
       // place order using the dummy ids
       String requestOrderPlaceOrderData = "{\"contents\":" + gson.toJson(requestOrderClient.getBoxOrders().get(0).foodBox.contents) + "}";
       String requestOrderPlaceOrderRequest = clientProps.getProperty("endpoint") + "/placeOrder?individual_id="+ requestOrderUserCHI +
               "&catering_business_name=" + requestOrderCateringCompanyName +
-              "&catering_postcode=" + generalTestPostcode;
+              "&catering_postcode=" + requestOrderCateringCompanyPostCode;
       // update server with correct dummy orders' status
       for(int i = 0; i <= 2; i++){
         //update correct ids
@@ -211,10 +273,6 @@ public class ShieldingIndividualClientImpTest {
         ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestOrderUpdateStatusRequest);
       }
       
-      //-------------Closest Company----------------
-      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + closestCateringCompanyRegistrationRequest);
-      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + closestCateringCompanyClientRegistrationRequest);
-      closestCateringCompanyClient.setShieldingIndividual(closestCateringCompanyCHI,generalTestPostcode);
 
     } catch (IOException e) {
       e.printStackTrace();
@@ -260,7 +318,7 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(polloFoodBoxes,registeredClient.showFoodBoxes("pollotarian"),"Pollotarian preference gives food box 2" );
     
     //test invalid user
-//    assertFalse(newClient.showFoodBoxes(),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.showFoodBoxes("none"),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
@@ -272,20 +330,22 @@ public class ShieldingIndividualClientImpTest {
                     "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}";
     Type listType = new TypeToken<ShieldingIndividualClientImp.MessagingFoodBox>() {} .getType();
     ShieldingIndividualClientImp.MessagingFoodBox b1 = new Gson().fromJson(box1, listType);
-    registeredClient.setMarked(b1);
-    assertFalse(registeredClient.placeOrder()); // We have set this client to have an order on 2021-04-20, if you test after 2021-04-25, this should cause error
+    registeredClient2.setMarked(b1);
+    assertFalse(registeredClient2.placeOrder()); // We have set this client to have an order on 2021-04-20, if you test after 2021-04-25, this should cause error
                                                 // You should set TODO in setup to a date within the week of your testing date.
-    // test registered user that has placed order: If the latest one is within one week
+    // test registered user that has placed order: If the latest one is not within one week
     registeredClient3.setMarked(b1);
     assertTrue(registeredClient3.placeOrder());
     
     // test registered user that hasn't picked food box
     registeredClient.setMarked(null);
     assertFalse(registeredClient.placeOrder());
+    registeredClient3.setMarked(null);
+    assertFalse(registeredClient3.placeOrder());
     
     // test registered user that has picked food box and hasn't placed order
-    registeredClient2.setMarked(b1);
-    assertTrue(registeredClient2.placeOrder());
+    registeredClient.setMarked(b1);
+    assertTrue(registeredClient.placeOrder());
     
     // test unregistered user
     assertFalse(newClient.placeOrder(), "Unregistered user shouldn't be able to use this method.");
@@ -293,6 +353,43 @@ public class ShieldingIndividualClientImpTest {
   
   @Test
   public void testEditOrder() {
+    // prepare order
+    String boxEdited = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":0},{\"id\":2,\"name\":\"tomatoes\"," +
+            "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}],\"delivered_by\":\"catering\"," +
+            "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}"; // change cucumber quantity from 1 to 0
+    Type listType = new TypeToken<ShieldingIndividualClientImp.MessagingFoodBox>() {} .getType();
+    ShieldingIndividualClientImp.MessagingFoodBox b1 = new Gson().fromJson(boxEdited, listType);
+    ShieldingIndividualClientImp.Order order = new ShieldingIndividualClientImp.Order();
+    order.status = 0;
+    order.foodBox = b1;
+    order.placeTime = LocalDateTime.of(2021,4,25,17,45,39);
+    
+    // registered user with no order history / registered user didn't use own order id
+    assertFalse(registeredClient.editOrder(orderId2));
+    // registered user with order history that could be edited; but haven't modify existing order
+    registeredClient2.setToBeEdited(null);
+    assertFalse(registeredClient2.editOrder(orderId2));
+    // registered user with order history that could be edited; but modify non existing order
+    assertFalse(registeredClient2.editOrder(invalidOrderId));
+    // registered user with order history that could be edited; try to edit but modified another order
+    order.orderId = orderId1;
+    registeredClient2.setToBeEdited(order);
+    assertFalse(registeredClient2.editOrder(orderId2));
+    // registered user with order history that could be edited; successfully edit
+    order.orderId = orderId2;
+    registeredClient2.setToBeEdited(order);
+    assertTrue(registeredClient2.editOrder(orderId2));
+    ShieldingIndividualClientImp.MessagingFoodBox localContent = registeredClient2.getBoxOrders().get(1).foodBox;
+    assertTrue(localContent.contents.get(0).quantity == 0);
+    // registered user with order history that could not be edited
+    order.orderId = orderId3;
+    order.status = 3;
+    registeredClient3.setToBeEdited(order);
+    assertFalse(registeredClient3.editOrder(orderId3));
+    assertNull(registeredClient2.getToBeEdited());
+    // test unregistered user
+    assertFalse(newClient.editOrder(orderId2),"Unregistered user shouldn't be able to use this method.");
+
     // 1. registered user without setting item quantity
 //    editBoxClient.setToBeEdited(null);
 //    assertFalse(editBoxClient.editOrder(editBoxOrderNum),"Need to set item quantity before updating server.");
@@ -307,6 +404,7 @@ public class ShieldingIndividualClientImpTest {
   
     // 3. test unregistered user
 //    assertFalse(newClient.editOrder(editBoxOrderNum),"Unregistered user shouldn't be able to use this method.");
+
   }
   
   
@@ -501,10 +599,10 @@ public class ShieldingIndividualClientImpTest {
   @Test
   public void testGetOrderNumbers() {
     // no order history
-    assertNull(registeredClient2.getOrderNumbers(),"No order history");
+    assertEquals(0,registeredClient.getOrderNumbers().size(),"No order history");
     // check if returned correctly
-    Collection<Integer> ids = new ArrayList<Integer>(Arrays.asList(1,2));
-    assertEquals(ids, registeredClient.getOrderNumbers(),"Incorrect number of orders");
+    Collection<Integer> ids = new ArrayList<Integer>(Arrays.asList(orderId1,orderId2));
+    assertEquals(ids, registeredClient2.getOrderNumbers(),"Incorrect number of orders");
     
     //test unregistered user
     assertNull(newClient.getOrderNumbers(),"Unregistered user shouldn't be able to use this method.");
@@ -513,108 +611,108 @@ public class ShieldingIndividualClientImpTest {
   @Test
   public void testGetStatusForOrder() { // query sever
     // no order history
-    assertNull(registeredClient2.getStatusForOrder(1),"Haven't ordered yet");
-    assertNull(registeredClient2.getStatusForOrder(2),"Haven't ordered yet");
+    assertNull(registeredClient.getStatusForOrder(orderId1),"Haven't ordered yet");
+    assertNull(registeredClient.getStatusForOrder(orderId2),"Haven't ordered yet");
     // un-found order number
-    assertNull(registeredClient.getStatusForOrder(3),"No such order");
-    assertNull(registeredClient.getStatusForOrder(4),"No such order");
+    assertNull(registeredClient2.getStatusForOrder(invalidOrderId),"No such order");
     // check if returned correctly
-    assertEquals("delivered", registeredClient.getStatusForOrder(1));
-    assertEquals("placed", registeredClient.getStatusForOrder(2));
+    assertEquals("delivered", registeredClient2.getStatusForOrder(orderId1));
+    assertEquals("placed", registeredClient2.getStatusForOrder(orderId2));
     
     //test unregistered user
-    assertNull(newClient.getStatusForOrder(1),"Unregistered user shouldn't be able to use this method.");
-    assertNull(newClient.getStatusForOrder(2),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getStatusForOrder(orderId1),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getStatusForOrder(orderId2),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
   public void testGetItemIdsForOrder() {
     // no order history
-    assertNull(registeredClient2.getItemIdsForOrder(1),"Haven't ordered yet");
-    assertNull(registeredClient2.getItemIdsForOrder(2),"Haven't ordered yet");
+    assertNull(registeredClient.getItemIdsForOrder(orderId1),"Haven't ordered yet");
+    assertNull(registeredClient.getItemIdsForOrder(orderId2),"Haven't ordered yet");
     // un-found order number
-    assertNull(registeredClient.getItemIdsForOrder(3),"No such order");
-    assertNull(registeredClient.getItemIdsForOrder(4),"No such order");
+    assertNull(registeredClient2.getItemIdsForOrder(invalidOrderId),"No such order");
     // check if returned correctly
     Collection<Integer> ids = new ArrayList<Integer>(Arrays.asList(1,2,6));
-    assertEquals(ids, registeredClient.getItemIdsForOrder(1));
-    assertEquals(ids, registeredClient.getItemIdsForOrder(2));
+    assertEquals(ids, registeredClient2.getItemIdsForOrder(orderId1));
+    assertEquals(ids, registeredClient2.getItemIdsForOrder(orderId2));
     
     //test unregistered user
-    assertNull(newClient.getItemIdsForOrder(1),"Unregistered user shouldn't be able to use this method.");
-    assertNull(newClient.getItemIdsForOrder(2),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getItemIdsForOrder(orderId1),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getItemIdsForOrder(orderId2),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
   public void testGetItemNameForOrder() {
     // no order history
-    assertNull(registeredClient2.getItemNameForOrder(1,1),"Haven't ordered yet");
-    assertNull(registeredClient2.getItemNameForOrder(2,1),"Haven't ordered yet");
+    assertNull(registeredClient.getItemNameForOrder(1,orderId1),"Haven't ordered yet");
+    assertNull(registeredClient.getItemNameForOrder(2,orderId1),"Haven't ordered yet");
     // un-found order number
-    assertNull(registeredClient.getItemNameForOrder(1,3),"No such order");
+    assertNull(registeredClient2.getItemNameForOrder(1,invalidOrderId),"No such order");
     // un-found order item
-    assertNull(registeredClient.getItemNameForOrder(4,1),"No such item");
-    assertNull(registeredClient.getItemNameForOrder(7,2),"No such item");
+    assertNull(registeredClient2.getItemNameForOrder(4,orderId1),"No such item");
+    assertNull(registeredClient2.getItemNameForOrder(7,orderId2),"No such item");
     // success scenario
-    assertEquals("cucumbers", registeredClient.getItemNameForOrder(1,1),"Incorrect item");
-    assertEquals("tomatoes", registeredClient.getItemNameForOrder(2,2),"Incorrect item");
-    assertEquals("pork", registeredClient.getItemNameForOrder(6,1),"Incorrect item");
+    assertEquals("cucumbers", registeredClient2.getItemNameForOrder(1,orderId1),"Incorrect item");
+    assertEquals("tomatoes", registeredClient2.getItemNameForOrder(2,orderId2),"Incorrect item");
+    assertEquals("pork", registeredClient2.getItemNameForOrder(6,orderId1),"Incorrect item");
     
     //test unregistered user
-    assertNull(newClient.getItemNameForOrder(1,1),"Unregistered user shouldn't be able to use this method.");
-    assertNull(newClient.getItemNameForOrder(2,1),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getItemNameForOrder(1,orderId1),"Unregistered user shouldn't be able to use this method.");
+    assertNull(newClient.getItemNameForOrder(2,orderId1),"Unregistered user shouldn't be able to use this method.");
   }
   
   
   @Test
   public void testGetItemQuantityForOrder() {
     // no order history
-    assertEquals(-1,registeredClient2.getItemQuantityForOrder(1,1),"Haven't ordered yet");
-    assertEquals(-1,registeredClient2.getItemQuantityForOrder(2,1),"Haven't ordered yet");
+    assertEquals(-1,registeredClient.getItemQuantityForOrder(1,orderId1),"Haven't ordered yet");
+    assertEquals(-1,registeredClient.getItemQuantityForOrder(2,orderId1),"Haven't ordered yet");
     // un-found order number
-    assertEquals(-1,registeredClient.getItemQuantityForOrder(1,3),"No such order");
+    assertEquals(-1,registeredClient2.getItemQuantityForOrder(1,invalidOrderId),"No such order");
     // un-found order item
-    assertEquals(-1,registeredClient.getItemQuantityForOrder(4,1),"No such item");
-    assertEquals(-1,registeredClient.getItemQuantityForOrder(7,2),"No such item");
+    assertEquals(-1,registeredClient2.getItemQuantityForOrder(4,orderId1),"No such item");
+    assertEquals(-1,registeredClient2.getItemQuantityForOrder(7,orderId2),"No such item");
     // success scenario
-    assertEquals(1, registeredClient.getItemQuantityForOrder(1,1),"Incorrect quantity");
-    assertEquals(2, registeredClient.getItemQuantityForOrder(2,2),"Incorrect quantity");
-    assertEquals(1, registeredClient.getItemQuantityForOrder(6,1),"Incorrect quantity");
+    assertEquals(1, registeredClient2.getItemQuantityForOrder(1,orderId1),"Incorrect quantity");
+    assertEquals(2, registeredClient2.getItemQuantityForOrder(2,orderId2),"Incorrect quantity");
+    assertEquals(1, registeredClient2.getItemQuantityForOrder(6,orderId1),"Incorrect quantity");
     
     //test unregistered user
-    assertEquals(-1,newClient.getItemQuantityForOrder(1,1),"Unregistered user shouldn't be able to use this method.");
-    assertEquals(-1,newClient.getItemQuantityForOrder(2,1),"Unregistered user shouldn't be able to use this method.");
+    assertEquals(-1,newClient.getItemQuantityForOrder(1,orderId1),"Unregistered user shouldn't be able to use this method.");
+    assertEquals(-1,newClient.getItemQuantityForOrder(2,orderId1),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
   public void testSetItemQuantityForOrder() {
+    
     // no order history
-    assertFalse(registeredClient2.setItemQuantityForOrder(1,2,0),"Haven't ordered yet");
-    assertFalse(registeredClient2.setItemQuantityForOrder(2,2,0),"Haven't ordered yet");
+    assertFalse(registeredClient.setItemQuantityForOrder(1,orderId2,0),"Haven't ordered yet");
+    assertFalse(registeredClient.setItemQuantityForOrder(2,orderId2,0),"Haven't ordered yet");
     // un-found order number
-    assertFalse(registeredClient.setItemQuantityForOrder(1,3,0),"No such order");
+    assertFalse(registeredClient2.setItemQuantityForOrder(1,invalidOrderId,0),"No such order");
     // un-found order item
-    assertFalse(registeredClient.setItemQuantityForOrder(4,2,0),"No such item");
-    assertFalse(registeredClient.setItemQuantityForOrder(7,2,0),"No such item");
+    assertFalse(registeredClient2.setItemQuantityForOrder(4,orderId2,0),"No such item");
+    assertFalse(registeredClient2.setItemQuantityForOrder(7,orderId2,0),"No such item");
     // invalid quantity
-    assertFalse(registeredClient.setItemQuantityForOrder(1,2,4),"Quantity can only be reduced");
-    assertFalse(registeredClient.setItemQuantityForOrder(6,2,4),"Quantity can only be reduced");
+    assertFalse(registeredClient2.setItemQuantityForOrder(1,orderId2,4),"Quantity can only be reduced");
+    assertFalse(registeredClient2.setItemQuantityForOrder(6,orderId2,4),"Quantity can only be reduced");
     // order that could not be successfully set (invalid for editing)
-    assertFalse(registeredClient.setItemQuantityForOrder(1,1,0),"Order couldn't be edited");
-    assertFalse(registeredClient.setItemQuantityForOrder(6,1,0),"Order couldn't be edited");
+    assertFalse(registeredClient2.setItemQuantityForOrder(1,orderId1,0),"Order couldn't be edited");
+    assertFalse(registeredClient2.setItemQuantityForOrder(6,orderId1,0),"Order couldn't be edited");
     // success scenario
-    assertTrue(registeredClient.setItemQuantityForOrder(1,2,0),"Incorrect item");
-    assertTrue(registeredClient.setItemQuantityForOrder(2,2,1),"Incorrect item");
-    assertTrue(registeredClient.setItemQuantityForOrder(6,2,0),"Incorrect item");
+    assertTrue(registeredClient2.setItemQuantityForOrder(1,orderId2,0),"Incorrect item");
+    assertTrue(registeredClient2.setItemQuantityForOrder(2,orderId2,1),"Incorrect item");
+    assertTrue(registeredClient2.setItemQuantityForOrder(6,orderId2,0),"Incorrect item");
     // the updates to latest
     // invalid user
-    assertFalse(registeredClient.setItemQuantityForOrder(1,2,0),"New client shouldn't have ordered");
-    assertFalse(registeredClient.setItemQuantityForOrder(2,2,1),"New client shouldn't have ordered");
+    assertFalse(newClient.setItemQuantityForOrder(1,2,0),"New client shouldn't have ordered");
+    assertFalse(newClient.setItemQuantityForOrder(2,2,1),"New client shouldn't have ordered");
   }
   
   @Test
   public void testGetClosestCateringCompany() {
     //test registered user
+    System.out.println(closestCateringCompanyClient.getClosestCateringCompany());
     assertEquals(closestCateringCompanyName,closestCateringCompanyClient.getClosestCateringCompany(),"Closest Catering Company is incorrect.");
     
     // test unregistered user
@@ -622,13 +720,31 @@ public class ShieldingIndividualClientImpTest {
   }
   
   @Test
-  public void pickOrderToEdit() {
-    boolean success = registeredClient.pickOrderToEdit(2);
+  public void testPickOrderToEdit() {
+    // registered user with no order history / registered user didn't use own order id
+    assertFalse(registeredClient.pickOrderToEdit(orderId2));
+    // registered user with order history that could be edited; but pick non existing order
+    assertFalse(registeredClient2.pickOrderToEdit(invalidOrderId));
+    // registered user with order history that could be edited; successfully edit
+    assertTrue(registeredClient2.pickOrderToEdit(orderId2));
+    assertNotNull(registeredClient2.getToBeEdited());
+    Gson gson = new Gson();
+    String staging = gson.toJson(registeredClient2.getToBeEdited());
+    String local = gson.toJson(registeredClient2.getBoxOrders().get(1));
+    assertEquals(staging, local);
+    assertNotEquals(registeredClient2.getToBeEdited(), registeredClient2.getBoxOrders().get(1));
+    // registered user with order history that could not be edited
+    assertFalse(registeredClient3.pickOrderToEdit(orderId3));
+    // test unregistered user
+    assertFalse(newClient.pickOrderToEdit(orderId2),"Unregistered user shouldn't be able to use this method.");
+    
+    /*
+    boolean success = registeredClient2.pickOrderToEdit(2);
     assert success;
-    ShieldingIndividualClientImp.Order o = registeredClient.getToBeEdited();
+    ShieldingIndividualClientImp.Order o = registeredClient2.getToBeEdited();
     assertEquals(2,o.orderId);
     assertEquals(0,o.status);
-    assertEquals(LocalDateTime.of(2021,4,20,17,45,39),o.placeTime);
+    assertEquals(LocalDateTime.of(2021,4,25,17,45,39),o.placeTime);
   
     String box1 = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
             "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}],\"delivered_by\":\"catering\"," +
@@ -636,16 +752,18 @@ public class ShieldingIndividualClientImpTest {
     Type listType = new TypeToken<ShieldingIndividualClientImp.MessagingFoodBox>() {} .getType();
     ShieldingIndividualClientImp.MessagingFoodBox b1 = new Gson().fromJson(box1, listType);
     assertEquals(o.foodBox.id, b1.id);
-    boolean check = registeredClient.setItemQuantityForOrder(2,2,1);
+    boolean check = registeredClient2.setItemQuantityForOrder(2,2,1);
     assert check;
     int amount = -1;
-    Collection<ShieldingIndividualClientImp.Content> cts = registeredClient.getToBeEdited().foodBox.contents;
+    Collection<ShieldingIndividualClientImp.Content> cts = registeredClient2.getToBeEdited().foodBox.contents;
     for (ShieldingIndividualClientImp.Content c: cts) {
       if (c.id == 2) amount = c.quantity;
     }
     assertEquals(1,amount);
     
-    assertEquals(2,registeredClient.getItemQuantityForOrder(2,2));
+    assertEquals(2,registeredClient2.getItemQuantityForOrder(2,2));
+    
+     */
   }
   
 }

@@ -80,6 +80,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public ShieldingIndividualClientImp(String endpoint) {
     this.endpoint = endpoint;
     this.shieldingIndividual = new ShieldingIndividual();
+    this.cateringCompany = new CateringCompany(); //add
   }
 
 // ==================================== Server Endpoints Functions ====================================
@@ -184,11 +185,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean isInSameWeek(LocalDateTime t) {
     Calendar cal1 = Calendar.getInstance();
     int currentYear = cal1.getWeekYear();
-    int currentWeek = cal1.WEEK_OF_YEAR;
+    int currentWeek = cal1.get(Calendar.WEEK_OF_YEAR);
     Calendar cal2 = Calendar.getInstance();
-    cal2.set(t.getYear(), t.getMonthValue(), t.getDayOfMonth(),t.getHour(),t.getMinute(),t.getSecond());
+    cal2.set(t.getYear(), t.getMonthValue()-1, t.getDayOfMonth(),t.getHour(),t.getMinute(),t.getSecond());
     int latestYear = cal2.getWeekYear();
-    int latestWeek = cal2.WEEK_OF_YEAR;
+    int latestWeek = cal2.get(Calendar.WEEK_OF_YEAR);
     if (currentYear == latestYear && currentWeek == latestWeek) return true;
     return false;
   }
@@ -202,9 +203,15 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (cateringCompany == null) {
       getClosestCateringCompany();
     }
-    // precondition: haven't ordered this week
-    Order latest = boxOrders.get(boxOrders.size() - 1);
-    if (isInSameWeek(latest.placeTime) && latest.status != 4) return false;
+    System.out.println("here1");
+    if (cateringCompany == null) return false;
+    System.out.println("here2");
+    // precondition: haven't ordered this week / never ordered
+    if (boxOrders.size() > 0) {
+      Order latest = boxOrders.get(boxOrders.size() - 1);
+      if (isInSameWeek(latest.placeTime) && latest.status != 4) return false;
+    }
+    System.out.println("here3");
     /*
     if (latest != null) {
       Duration delta = Duration.between(latest.placeTime, LocalDateTime.now());
@@ -226,7 +233,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     String x = shieldingIndividual.CHI;
     String z = cateringCompany.name;
     String w = cateringCompany.postCode;
-    String request = "placeOrder?individual_id="+ x +
+    String request = "/placeOrder?individual_id="+ x +
                      "&catering_business_name=" + z +
                      "&catering_postcode=" + w;
   
@@ -235,6 +242,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     try {
       // perform request
       String response = ClientIO.doPOSTRequest(request, data);
+      System.out.println(response);
       assert response != null;
       
       // add into the order history
@@ -273,15 +281,17 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     
     // precondition: isRegistered()
     if (!isRegistered()) return false;
-    // successfully toBeEdited has been set up
-    if (toBeEdited == null) return false;
-    assert toBeEdited != null: "toBeEdited should have been set";
     // precondition: orderNumber exist
-    //Collection<Integer> orderIds = getOrderNumbers();
-    //if (!orderIds.contains(orderNumber)) return false;
+    Collection<Integer> orderIds = getOrderNumbers();
+    if (!orderIds.contains(orderNumber)) return false;
+    // precondition: toBeEdited should be staged
+    if (toBeEdited == null) return false;
+    assert toBeEdited != null: "Haven't select and modify the order to be edited";
+    // precondition: staging toBeEdited must have same order number as parameter
+    if (toBeEdited.orderId != orderNumber) return false;
     // precondition: order status is still placed
-    //boolean success = requestOrderStatus(orderNumber); // update local order status
-    //assert success;
+    if (toBeEdited.status != 0) return false;
+    
     //String s = getStatusForOrder(orderNumber);
     //if (!s.equals("placed")) return false;
     /*
@@ -389,7 +399,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (!orderIds.contains(orderNumber)) return false;
     
     String request = "/requestStatus?order_id="+orderNumber;
-    System.out.println("requestOrderStatus order num: " + orderNumber);
   
     request = endpoint + request;
     
@@ -404,7 +413,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       for (Order o: boxOrders) {
         if (o.orderId == orderNumber) {
           o.status = s;
-          System.out.println("requestOrderStatus out: " + boxOrders.get(2).status);
           return true;
         }
       }
@@ -700,16 +708,20 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     //check validity of inputs
     if (boxOrders == null) return null;
     
-    System.out.println("getStatusForOrder order number:" + orderNumber + "; status: " + boxOrders.get(2).status);
     //TODO: refactor
     for (Order o: boxOrders) {
       if (o.orderId == orderNumber) {
-        if (o.status == 0) return "placed";
+        System.out.println(o.status);
+        if (o.status == 0) {
+          System.out.println("se");
+          return "placed";
+        }
         else if (o.status == 1) return "packed";
         else if (o.status == 2) return "dispatched";
         else if (o.status == 3) return "delivered";
         else if (o.status == 4) return "cancelled";
         else return null;
+
       }
     }
     return null;
@@ -816,15 +828,22 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean pickOrderToEdit(int orderNumber) {
     // precondition: isRegistered()
     if (!isRegistered()) return false;
+    System.out.println(1);
     // precondition: orderNumber exist
     Collection<Integer> orderIds = getOrderNumbers();
+    System.out.println(2);
     if (!orderIds.contains(orderNumber)) return false;
     // precondition: order status is still placed
     boolean success = requestOrderStatus(orderNumber); // update local order status
+    System.out.println(3);
     if (!success) return false;
+    System.out.println(4);
     String s = getStatusForOrder(orderNumber);
+    System.out.println(5);
+    //System.out.println(s);
     if (!s.equals("placed")) return false;
-    
+  
+    System.out.println(6);
     for (Order o: boxOrders) {
       if (o.orderId == orderNumber) {
         Gson gson = new Gson();
@@ -848,14 +867,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean setItemQuantityForOrder(int itemId, int orderNumber, int quantity) { // currently work for all order
     // check individual's validity to use methods
     if (!isRegistered()) return false;
-    
+    System.out.println("s1");
     //check validation of inputs
     if (boxOrders == null) return false; //what if used in place order
                                          // and the order is the first order ever that this individual have placed.
                                          // that is, boxOrders is indeed null;
-    
+    System.out.println("s2");
     if (toBeEdited == null || toBeEdited.orderId != orderNumber) {
+      System.out.println("s4");
       boolean success = pickOrderToEdit(orderNumber);
+      System.out.println(success);
       if (!success) return false;
     }
     assert (toBeEdited.orderId == orderNumber);
@@ -875,6 +896,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       if (c.id == itemId) {
         if (quantity < c.quantity) {
           c.quantity = quantity;
+          System.out.println("q:"+c.quantity);
           return true;
         }
       }
@@ -946,11 +968,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     shieldingIndividual.postCode = postCode;
     shieldingIndividual.registered = true;
     marked = new MessagingFoodBox();
+    boxOrders = new ArrayList<Order>();
     // add marked content id .....
   }
   
-  public void setCateringCompany(String name){
+  public void setCateringCompany(String name, String postCode){
     cateringCompany.name = name;
+    cateringCompany.postCode = postCode;
+
   }
   
   protected void setOrderListStatus(int element,int status){
@@ -976,7 +1001,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   
   /**
    * Create a dummy test order variable based on status only for test use.
-   * @param status int indicating the status of the order to be created
    * @return a valid dummy Order object
    */
   protected Order createDummyTestOrder(){
