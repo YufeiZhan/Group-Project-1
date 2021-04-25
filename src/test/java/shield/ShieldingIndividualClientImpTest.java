@@ -23,31 +23,41 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ShieldingIndividualClientImpTest {
   private final static String clientPropsFilename = "client.cfg";
-
   private Properties clientProps;
+  
+  private final String generalTestPostcode = "EH16_5AY";
+  
   private ShieldingIndividualClientImp newClient;
   private String newCHI;
-  
   
   private ShieldingIndividualClientImp registeredClient;
   private String registeredCHI;
   private String registeredValidOrderNum;
   private int registeredInvalidOrderNum;
   
-  
   private ShieldingIndividualClientImp closestCateringCompanyClient;
   private String closestCateringCompanyName;
-  private String generalTestPostcode;
-  
-  
-//  private ShieldingIndividualClientImp placedOrderClient;
-//  private String placedOrderCHI;
   
   private ShieldingIndividualClientImp registeredClient2; // with no order history
   private String testCHI2; 
   
   private ShieldingIndividualClientImp registeredClient3; // with latest order placed last week
   private String testCHI3;
+  
+  //Edit Box
+//  private ShieldingIndividualClientImp editBoxClient;
+//  private String editBoxUserCHI;
+//  private int editBoxOrderNum;
+  
+  //Cancel Order
+  private ShieldingIndividualClientImp cancelOrderClient;
+  private String cancelOrderUserCHI;
+  private String cancelOrderCateringCompanyName;
+  
+  //Request Order
+  private ShieldingIndividualClientImp requestOrderClient;
+  private String requestOrderUserCHI;
+  private String requestOrderCateringCompanyName;
 
   private Properties loadProperties(String propsFilename) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -70,25 +80,40 @@ public class ShieldingIndividualClientImpTest {
     newClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     newCHI = "0101111245";
     
-  
     registeredClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     registeredCHI = "0505150000";
     String userRegistrationRequest = "/registerShieldingIndividual?CHI="+registeredCHI;
-//    registeredInvalidOrderNum = 10000;
-//    String placedOrderRequest = "/placeOrder?individual_id="+registeredCHI+"&catering_business_name="+registeredCateringCompanyName+"&catering_postcode="+registeredCCPostCode;
-
-  
+    
     registeredClient2 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));  //add
     testCHI2 = "0505150110"; //add
     String userRegistration2Request = "/registerShieldingIndividual?CHI="+testCHI2; //add
     
-    
     registeredClient3 = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     testCHI3 = "0504130000";
     String userRegistration3Request = "/registerShieldingIndividual?CHI="+testCHI3;
+  
+    // ------- Edit Order -------
+//    editBoxClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+//    editBoxUserCHI = "0404040000";
+//    String editBoxUserRegistrationRequest = "/registerShieldingIndividual?CHI="+editBoxUserCHI;
+
+    // ------- Cancel Order -------
+    cancelOrderClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+    cancelOrderUserCHI = "0202020000";
+    String cancelOrderUserRegistrationRequest = "/registerShieldingIndividual?CHI="+cancelOrderUserCHI;
+    cancelOrderCateringCompanyName = "cancelOrderTestCateringCompany";
+    String cancelOrderCateringCompanyRegistrationRequest = "/registerCateringCompany?business_name=" + cancelOrderCateringCompanyName
+            + "&postcode=" + generalTestPostcode;
+  
+    // ------- Request Order -------
+    requestOrderClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+    requestOrderUserCHI = "0606060000";
+    String requestOrderUserRegistrationRequest = "/registerShieldingIndividual?CHI="+requestOrderUserCHI;
+    requestOrderCateringCompanyName = "requestOrderTestCateringCompany";
+    String requestOrderCateringCompanyRegistrationRequest = "/registerCateringCompany?business_name=" + requestOrderCateringCompanyName
+            + "&postcode=" + generalTestPostcode;
     
-    // -------Closest Catering Company-------
-    generalTestPostcode = "EH16_5AY";
+    // ------- Closest Catering Company -------
     closestCateringCompanyName = "tempCateringCompanyForTestInShieldingClient";
     String closestCateringCompanyRegistrationRequest = "/registerCateringCompany?business_name="+closestCateringCompanyName+"&postcode="+generalTestPostcode;
     closestCateringCompanyClient = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
@@ -134,12 +159,57 @@ public class ShieldingIndividualClientImpTest {
       ShieldingIndividualClientImp.Order newOrder3 = new ShieldingIndividualClientImp.Order();
       newOrder3.status = 3;
       newOrder3.orderId = 1;
-      newOrder3.foodBox = b3;
+//      newOrder3.foodBox = b3;
       newOrder3.placeTime = LocalDateTime.of(2021,4,12,17,45,39);
       
       List<ShieldingIndividualClientImp.Order> orders3 = new ArrayList<ShieldingIndividualClientImp.Order>();
       orders3.add(newOrder3);
       registeredClient3.setBoxOrders(orders3);
+  
+      //------------- Edit Box ----------------
+//      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + editBoxUserRegistrationRequest);
+//      editBoxClient.setShieldingIndividual(editBoxUserCHI,generalTestPostcode);
+  
+      //------------- Cancel Order ----------------
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + cancelOrderUserRegistrationRequest);
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + cancelOrderCateringCompanyRegistrationRequest);
+      cancelOrderClient.setShieldingIndividual(cancelOrderUserCHI, generalTestPostcode);
+      cancelOrderClient.setBoxOrders(cancelOrderClient.createDummyTestOrderList());
+      // place order using the dummy ids
+      Gson gson = new Gson();
+      String cancelOrderPlaceOrderData = "{\"contents\":" + gson.toJson(cancelOrderClient.getBoxOrders().get(0).foodBox.contents) + "}";
+      String cancelOrderPlaceOrderRequest = clientProps.getProperty("endpoint") + "/placeOrder?individual_id="+ cancelOrderUserCHI +
+              "&catering_business_name=" + cancelOrderCateringCompanyName +
+              "&catering_postcode=" + generalTestPostcode;
+      // update server with correct dummy orders' status
+      for(int i = 0; i <= 2; i++){
+        //update correct ids
+        cancelOrderClient.getBoxOrders().get(i).orderId = Integer.parseInt(ClientIO.doPOSTRequest(cancelOrderPlaceOrderRequest,cancelOrderPlaceOrderData));
+        String cancelOrderUpdateStatusRequest = "/updateOrderStatus?order_id="+ cancelOrderClient.getBoxOrders().get(i).orderId +
+                "&newStatus=" + cancelOrderClient.convertIntStatusToString(i); //probelmmmmmmmm
+        cancelOrderClient.setOrderListStatus(i,i);
+        ClientIO.doGETRequest(clientProps.getProperty("endpoint") + cancelOrderUpdateStatusRequest);
+      }
+      
+      //-------------Request Order Status----------------
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestOrderUserRegistrationRequest);
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestOrderCateringCompanyRegistrationRequest);
+      requestOrderClient.setShieldingIndividual(requestOrderUserCHI, generalTestPostcode);
+      requestOrderClient.setBoxOrders(requestOrderClient.createDummyTestOrderList());
+      // place order using the dummy ids
+      String requestOrderPlaceOrderData = "{\"contents\":" + gson.toJson(requestOrderClient.getBoxOrders().get(0).foodBox.contents) + "}";
+      String requestOrderPlaceOrderRequest = clientProps.getProperty("endpoint") + "/placeOrder?individual_id="+ requestOrderUserCHI +
+              "&catering_business_name=" + requestOrderCateringCompanyName +
+              "&catering_postcode=" + generalTestPostcode;
+      // update server with correct dummy orders' status
+      for(int i = 0; i <= 2; i++){
+        //update correct ids
+        requestOrderClient.getBoxOrders().get(i).orderId = Integer.parseInt(ClientIO.doPOSTRequest(requestOrderPlaceOrderRequest,requestOrderPlaceOrderData));
+        String requestOrderUpdateStatusRequest = "/updateOrderStatus?order_id="+ requestOrderClient.getBoxOrders().get(i).orderId +
+                "&newStatus=" + requestOrderClient.convertIntStatusToString(i);
+        requestOrderClient.setOrderListStatus(i,i);
+        ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestOrderUpdateStatusRequest);
+      }
       
       //-------------Closest Company----------------
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + closestCateringCompanyRegistrationRequest);
@@ -190,7 +260,7 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(polloFoodBoxes,registeredClient.showFoodBoxes("pollotarian"),"Pollotarian preference gives food box 2" );
     
     //test invalid user
-    assertFalse(newClient.showFoodBoxes(),"Unregistered user shouldn't be able to use this method.");
+//    assertFalse(newClient.showFoodBoxes(),"Unregistered user shouldn't be able to use this method.");
   }
   
   @Test
@@ -223,31 +293,53 @@ public class ShieldingIndividualClientImpTest {
   
   @Test
   public void testEditOrder() {
-    // registered user 
+    // 1. registered user without setting item quantity
+//    editBoxClient.setToBeEdited(null);
+//    assertFalse(editBoxClient.editOrder(editBoxOrderNum),"Need to set item quantity before updating server.");
     
-    //
+    // 2. registered user after setting item quantity
+    // 2.1 Different order content in toBeEdited and server
     
-    //
+    // 2.2 Call EditOrder()
+    
+    // 2.3 Same order content in toBeEdited and server
+    
   
-    // test unregistered user
-    assertFalse(newClient.editOrder(),"Unregistered user shouldn't be able to use this method.");
+    // 3. test unregistered user
+//    assertFalse(newClient.editOrder(editBoxOrderNum),"Unregistered user shouldn't be able to use this method.");
   }
   
   
   @Test
   public void testCancelOrder() {
+    // test registered user with invalid order number
+    assertFalse(cancelOrderClient.cancelOrder(500),"Cancelling Order with invalid order number should be invalid operation.");
     
+    // test registered user with invalid order status
+    assertFalse(cancelOrderClient.cancelOrder(cancelOrderClient.getBoxOrders().get(2).orderId),"Cancelling Order with valid order status should be valid operation.");
+  
+    // test registered user cancel order successfully
+    //TODO：seems like dispatch cannot be cancelled as well using server
+    for(int i = 0; i <= 1; i++){
+//      System.out.println("Test pre-status:" + cancelOrderClient.getBoxOrders().get(i).status);
+      assertTrue(cancelOrderClient.cancelOrder(cancelOrderClient.getBoxOrders().get(i).orderId),"Cancelling Order with invalid order status should be invalid operation.");
+//      System.out.println(i);
+    }
     
     // test unregistered user
-    assertFalse(newClient.editOrder(),"Unregistered user shouldn't be able to use this method.");
+    assertFalse(newClient.cancelOrder(50),"Unregistered user shouldn't be able to use this method.");
   }
   
   
   @Test
   public void testRequestOrderStatus() { //required placed order to check order status
     //test registered user with invalid order number
+    assertFalse(requestOrderClient.requestOrderStatus(10000),"Invalid order shouldn't request status successful.");
     
     //test registered user with valid order number
+    for(int i = 0; i <= 1; i++) {
+      assertTrue(requestOrderClient.requestOrderStatus(requestOrderClient.getBoxOrders().get(i).orderId));
+    }
     
     //test unregistered user
     assertFalse(newClient.requestOrderStatus(100),"Unregistered user shouldn't be able to use this method.");

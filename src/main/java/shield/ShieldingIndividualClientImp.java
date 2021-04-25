@@ -50,6 +50,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     LocalDateTime placeTime;
     int status;
     
+    public Order(){}
+    
+    public Order(int id, MessagingFoodBox box, LocalDateTime time, int status){
+      orderId = id;
+      foodBox = box;
+      placeTime = time;
+      this.status = status;
+    }
   }
   
   // internal field only used for transmission purposes
@@ -225,7 +233,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     request = endpoint + request;
   
     try {
-      //System.out.println(3);
       // perform request
       String response = ClientIO.doPOSTRequest(request, data);
       assert response != null;
@@ -254,7 +261,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     
     
   }
-
+  
+  /**
+   * Update server with the modified order previously using {@link #setItemQuantityForOrder(int,int,int)}.
+   *
+   * @param orderNumber the order number
+   * @return true if updating successfully with the server
+   */
   @Override
   public boolean editOrder(int orderNumber) {
     
@@ -320,7 +333,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
     return false;
   }
-
+  
+  /**
+   * Only registered users can use ths function.
+   * Preconditions are existing order number in the order list and valid order status.
+   *
+   * @param orderNumber the order number to be cancelled
+   * @return true if cancel successfully with server
+   */
   @Override
   public boolean cancelOrder(int orderNumber) {
     // precondition: isRegistered()
@@ -328,22 +348,23 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     // precondition: orderNumber exist
     Collection<Integer> orderIds = getOrderNumbers();
     if (!orderIds.contains(orderNumber)) return false;
-    // precondition: order status is still placed
-    boolean success = requestOrderStatus(orderNumber); // update local order status
-    if (!success) return false;
+    // precondition: order status is still placed, packed or dispatched
+    System.out.println("Place Order number1:" +orderNumber+"; status:"+ boxOrders.get(2).status);
+    if (!requestOrderStatus(orderNumber)) return false; // update local order status too if a valid query
+    System.out.println("Place Order number2:" +orderNumber+"; status:"+ boxOrders.get(2).status);
     String s = getStatusForOrder(orderNumber);
+    System.out.println(s);
     if (s.equals("delivered") || s.equals("cancelled")) return false;
-    
-  
-    String request = "/cancelOrder?order_id="+orderNumber;
-  
-    request = endpoint + request;
+    System.out.println("check");
+    String request = endpoint + "/cancelOrder?order_id="+orderNumber;
+    System.out.println(request);
   
     try {
       // perform request
       String response = ClientIO.doGETRequest(request);
       assert response != null;
     
+      System.out.println("response: "+ response);
       if (response.equals("True")) {
         for (Order o: boxOrders) {
           if (o.orderId == orderNumber) {
@@ -366,13 +387,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     // precondition: orderNumber exist
     Collection<Integer> orderIds = getOrderNumbers();
     if (!orderIds.contains(orderNumber)) return false;
-  
-  
+    
     String request = "/requestStatus?order_id="+orderNumber;
+    System.out.println("requestOrderStatus order num: " + orderNumber);
   
     request = endpoint + request;
-  
-    //TODO: do we really need the boxOrders?
+    
     try {
       // perform request
       String response = ClientIO.doGETRequest(request);
@@ -384,6 +404,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       for (Order o: boxOrders) {
         if (o.orderId == orderNumber) {
           o.status = s;
+          System.out.println("requestOrderStatus out: " + boxOrders.get(2).status);
           return true;
         }
       }
@@ -635,35 +656,34 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public boolean changeItemQuantityForPickedFoodBox(int itemId, int quantity) {
-    // check individual's validity to use methods
+    //check individual's validity to use methods
     if (!isRegistered()) return false;
-    
-    // check validation of inputs
+    //check validity of picked food box
     if (marked == null) return false;
     
     int boxId = marked.id;
     Collection<Integer> itemIds = getItemIdsForFoodBox(boxId);
+    //check if given item is within the picked box
     if (!itemIds.contains(itemId)) return false;
+    //check validity of the specified quantity
     int q = getItemQuantityForFoodBox(itemId,boxId);
     if (q < quantity || quantity < 0) return false;
-    // change
+    
     for (Content c: marked.contents) {
       if (c.id == itemId) {
         c.quantity = quantity;
-        return true; // revise
+        return true;
       }
     }
-    return false; // revise
-    
+    return false;
   }
   
   //  ---------------------- Query for Order From System ----------------------
 
   @Override
   public Collection<Integer> getOrderNumbers() {
-    // check individual's validity to use methods
-    if (!isRegistered()) return null;
-    
+    // check validity
+    if (!isRegistered()) return null; // check individual's validity to use methods
     if (boxOrders == null) return null;
     
     Collection<Integer> ids = new ArrayList<Integer>();
@@ -674,14 +694,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   }
 
   @Override
-  //Todo: check server first
   public String getStatusForOrder(int orderNumber) {
     // check individual's validity to use methods
     if (!isRegistered()) return null;
-    
-    //check validation of inputs
+    //check validity of inputs
     if (boxOrders == null) return null;
     
+    System.out.println("getStatusForOrder order number:" + orderNumber + "; status: " + boxOrders.get(2).status);
+    //TODO: refactor
     for (Order o: boxOrders) {
       if (o.orderId == orderNumber) {
         if (o.status == 0) return "placed";
@@ -690,7 +710,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         else if (o.status == 3) return "delivered";
         else if (o.status == 4) return "cancelled";
         else return null;
-        
       }
     }
     return null;
@@ -905,10 +924,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    
   }
   
-  //------------------------- getter/setter for testing--------------------------
+  //==================================== Public Functions for Testing ====================================
+//  ToDo: how about using protected?
+//  //set the baseline test order num and then gradually increment to avoid repeated order number
+//  private int nextTestOrderNum = 100000000;
+  
   public MessagingFoodBox getMarked() {return this.marked;}
   public void setMarked(MessagingFoodBox b) {this.marked = b;}
-  public Collection<Order> getBoxOrders() {return this.boxOrders;}
+  public List<Order> getBoxOrders() {return this.boxOrders;}
   public ShieldingIndividual getShieldingIndividual() {return this.shieldingIndividual;}
   
   public void setBoxOrders(List<Order> boxOrders) {
@@ -930,8 +953,49 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     cateringCompany.name = name;
   }
   
-  public void setMarked(MessagingFoodBox b){
-    marked = b;
+  protected void setOrderListStatus(int element,int status){
+    boxOrders.get(element).status = status;
+  }
+  
+  /**
+   * Create a dummy list of order number only for test use.
+   * There are 3 orders, each with status packed, dispatched and delivered.
+   * Used to test cancel order.
+   *
+   * @return list of order
+   */
+  protected List<Order> createDummyTestOrderList(){
+    List<Order> list = new ArrayList<>();
+//    list.add(createDummyTestOrder(4));
+    list.add(createDummyTestOrder());
+    list.add(createDummyTestOrder());
+    list.add(createDummyTestOrder());
+//    list.add(createDummyTestOrder(0));
+    return list;
+  }
+  
+  /**
+   * Create a dummy test order variable based on status only for test use.
+   * @param status int indicating the status of the order to be created
+   * @return a valid dummy Order object
+   */
+  protected Order createDummyTestOrder(){
+    Order order = new Order(0, createDummyTestFoodBox(), LocalDateTime.now(),0);
+//    nextTestOrderNum += 1; //increment for next use
+    return order;
+  }
+  
+  /**
+   * Create a dummy test box variable only for test use.
+   * @return a valid dummy MessagingFoodBox object
+   */
+  protected MessagingFoodBox createDummyTestFoodBox(){
+    String box = "{\"contents\":[{\"id\":1,\"name\":\"cucumbers\",\"quantity\":1},{\"id\":2,\"name\":\"tomatoes\"," +
+            "\"quantity\":2},{\"id\":6,\"name\":\"pork\",\"quantity\":1}],\"delivered_by\":\"catering\"," +
+            "\"diet\":\"none\",\"id\":1,\"name\":\"box a\"}";
+    Type listType = new TypeToken<MessagingFoodBox>() {} .getType();
+    MessagingFoodBox b1 = new Gson().fromJson(box, listType);
+    return b1;
   }
   
   public void setStagedFoodBox(){
@@ -956,7 +1020,30 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
   }
   
-  //------------------------- private functions--------------------------
+  /**
+   * Convert order status from integer to string
+   *
+   * @param orderStatus integer order status from 0 to 4
+   * @return String representation of order status
+   */
+  protected String convertIntStatusToString(int orderStatus){
+    switch (orderStatus){
+      case(0):
+        return "placed";
+      case(1):
+        return "packed";
+      case(2):
+        return "dispatched";
+      case(3):
+        return "delivered";
+      case(4):
+        return "cancelled";
+      default:
+        return null;
+    }
+  }
+  
+  //==================================== Private Helper Functions ====================================
   
   /**
    * Inner helper method to get boxes by dietary preference from the server
